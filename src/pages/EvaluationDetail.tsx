@@ -172,16 +172,28 @@ export default function EvaluationDetail() {
         <Button variant="outline" className="gap-2" disabled={exporting} onClick={async () => {
           setExporting(true);
           try {
-            const html2pdf = (await import("html2pdf.js")).default;
+            const html2canvas = (await import("html2canvas")).default;
+            const { jsPDF } = await import("jspdf");
             const el = camRef.current;
             if (!el) return;
-            await html2pdf().set({
-              margin: [10, 10, 10, 10],
-              filename: `CAM_${evalData.companyName.replace(/\s+/g, "_")}.pdf`,
-              image: { type: "jpeg", quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true },
-              jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-            }).from(el).save();
+            const canvas = await html2canvas(el, { scale: 2, useCORS: true });
+            const imgData = canvas.toDataURL("image/jpeg", 0.98);
+            const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = pageWidth - 20;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            let heightLeft = imgHeight;
+            let position = 10;
+            pdf.addImage(imgData, "JPEG", 10, position, imgWidth, imgHeight);
+            heightLeft -= (pageHeight - 20);
+            while (heightLeft > 0) {
+              position = -(pageHeight - 20) + 10;
+              pdf.addPage();
+              pdf.addImage(imgData, "JPEG", 10, position, imgWidth, imgHeight);
+              heightLeft -= (pageHeight - 20);
+            }
+            pdf.save(`CAM_${evalData.companyName.replace(/\s+/g, "_")}.pdf`);
           } finally {
             setExporting(false);
           }
