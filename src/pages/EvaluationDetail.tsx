@@ -1,9 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Download, AlertTriangle, CheckCircle, TrendingUp, Shield } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
 import { mockFinancialData, mockRiskScore, mockLoanRecommendation, mockEvaluations } from "@/data/mockData";
 import { FinancialAnalysis } from "@/components/FinancialAnalysis";
 import { RiskScorePanel } from "@/components/RiskScorePanel";
@@ -25,8 +26,126 @@ function getRiskCategory(score: number) {
 export default function EvaluationDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const evaluation = mockEvaluations.find((e) => e.id === id) || mockEvaluations[0];
-  const risk = getRiskCategory(evaluation.riskScore);
+  const [evalData, setEvalData] = useState<any>(null);
+  const [financials, setFinancials] = useState<any>(null);
+  const [riskScore, setRiskScore] = useState<any>(null);
+  const [loanRec, setLoanRec] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      // Check if this is a mock ID
+      const mockEval = mockEvaluations.find((e) => e.id === id);
+      if (mockEval) {
+        setEvalData({
+          companyName: mockEval.companyName,
+          industry: mockEval.industry,
+          riskScore: mockEval.riskScore,
+          loanAmountRequested: mockEval.loanAmountRequested,
+        });
+        setFinancials(mockFinancialData);
+        setRiskScore(mockRiskScore);
+        setLoanRec(mockLoanRecommendation);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch real data
+      const { data: evaluation } = await supabase
+        .from("evaluations")
+        .select("*, companies!inner(name, industry)")
+        .eq("id", id)
+        .single();
+
+      if (evaluation) {
+        setEvalData({
+          companyName: (evaluation as any).companies.name,
+          industry: (evaluation as any).companies.industry,
+          riskScore: evaluation.risk_score ? Number(evaluation.risk_score) : 0,
+          loanAmountRequested: Number(evaluation.loan_amount_requested),
+        });
+
+        // Fetch financials
+        const { data: fin } = await supabase
+          .from("extracted_financials")
+          .select("*")
+          .eq("evaluation_id", id)
+          .single();
+        if (fin) {
+          setFinancials({
+            revenue: fin.revenue || [],
+            ebitda: Number(fin.ebitda) || 0,
+            netProfit: Number(fin.net_profit) || 0,
+            totalDebt: Number(fin.total_debt) || 0,
+            currentAssets: Number(fin.current_assets) || 0,
+            currentLiabilities: Number(fin.current_liabilities) || 0,
+            totalEquity: Number(fin.total_equity) || 0,
+            debtToEquity: Number(fin.debt_to_equity) || 0,
+            dscr: Number(fin.dscr) || 0,
+            ebitdaMargin: Number(fin.ebitda_margin) || 0,
+            currentRatio: Number(fin.current_ratio) || 0,
+            revenueGrowth: (fin.revenue_growth as number[]) || [],
+          });
+        } else {
+          setFinancials(mockFinancialData);
+        }
+
+        // Fetch risk score
+        const { data: risk } = await supabase
+          .from("risk_scores")
+          .select("*")
+          .eq("evaluation_id", id)
+          .single();
+        if (risk) {
+          setRiskScore({
+            overall: Number(risk.overall_score),
+            components: {
+              financialStrength: { score: Number(risk.financial_strength_score), weight: 40, weighted: Number(risk.financial_strength_score) * 0.4 },
+              complianceHealth: { score: Number(risk.compliance_health_score), weight: 25, weighted: Number(risk.compliance_health_score) * 0.25 },
+              litigationNews: { score: Number(risk.litigation_news_score), weight: 20, weighted: Number(risk.litigation_news_score) * 0.2 },
+              qualitativeAssessment: { score: Number(risk.qualitative_score), weight: 15, weighted: Number(risk.qualitative_score) * 0.15 },
+            },
+            topDrivers: (risk.top_drivers as string[]) || [],
+          });
+        } else {
+          setRiskScore(mockRiskScore);
+        }
+
+        // Fetch loan recommendation
+        const { data: loan } = await supabase
+          .from("loan_recommendations")
+          .select("*")
+          .eq("evaluation_id", id)
+          .single();
+        if (loan) {
+          setLoanRec({
+            riskCategory: loan.risk_category,
+            recommendedAmount: Number(loan.recommended_amount),
+            requestedAmount: Number(loan.requested_amount),
+            approvalPercentage: Number(loan.approval_percentage),
+            suggestedInterestRate: Number(loan.suggested_interest_rate),
+            baseRate: Number(loan.base_rate),
+            riskPremium: Number(loan.risk_premium),
+            rationale: loan.rationale || "",
+          });
+        } else {
+          setLoanRec(mockLoanRecommendation);
+        }
+      }
+      setLoading(false);
+    };
+    fetch();
+  }, [id]);
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-20 text-muted-foreground">Loading evaluation...</div>;
+  }
+
+  if (!evalData) {
+    return <div className="flex items-center justify-center py-20 text-muted-foreground">Evaluation not found</div>;
+  }
+
+  const risk = getRiskCategory(evalData.riskScore);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -36,14 +155,14 @@ export default function EvaluationDetail() {
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">{evaluation.companyName}</h1>
+            <h1 className="text-2xl font-bold">{evalData.companyName}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant="secondary">{evaluation.industry}</Badge>
+              <Badge variant="secondary">{evalData.industry}</Badge>
               <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${risk.colorClass}`}>
-                Score: {evaluation.riskScore} – {risk.label}
+                Score: {evalData.riskScore} – {risk.label}
               </span>
               <span className="text-xs text-muted-foreground">
-                Requested: {formatCurrency(evaluation.loanAmountRequested)}
+                Requested: {formatCurrency(evalData.loanAmountRequested)}
               </span>
             </div>
           </div>
@@ -62,25 +181,27 @@ export default function EvaluationDetail() {
         </TabsList>
 
         <TabsContent value="financial">
-          <FinancialAnalysis data={mockFinancialData} />
+          {financials && <FinancialAnalysis data={financials} />}
         </TabsContent>
 
         <TabsContent value="risk">
-          <RiskScorePanel score={mockRiskScore} />
+          {riskScore && <RiskScorePanel score={riskScore} />}
         </TabsContent>
 
         <TabsContent value="recommendation">
-          <LoanRecommendationPanel recommendation={mockLoanRecommendation} />
+          {loanRec && <LoanRecommendationPanel recommendation={loanRec} />}
         </TabsContent>
 
         <TabsContent value="cam">
-          <CAMPreview
-            company={evaluation.companyName}
-            industry={evaluation.industry}
-            financials={mockFinancialData}
-            riskScore={mockRiskScore}
-            recommendation={mockLoanRecommendation}
-          />
+          {financials && riskScore && loanRec && (
+            <CAMPreview
+              company={evalData.companyName}
+              industry={evalData.industry}
+              financials={financials}
+              riskScore={riskScore}
+              recommendation={loanRec}
+            />
+          )}
         </TabsContent>
       </Tabs>
     </div>

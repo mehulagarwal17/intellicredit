@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Upload, Check, Building2, FileUp, BarChart3 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Upload, Check, Building2, FileUp, BarChart3, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const steps = [
   { id: 1, title: "Company Profile", icon: Building2 },
@@ -22,17 +25,23 @@ const industries = [
 ];
 
 const documentTypes = [
-  { id: "annual-report", label: "Annual Report", accept: ".pdf", required: true },
-  { id: "gst-data", label: "GST Data", accept: ".csv", required: true },
-  { id: "bank-statement", label: "Bank Statement", accept: ".csv,.pdf", required: true },
-  { id: "legal-notice", label: "Legal Notice", accept: ".pdf", required: false },
-  { id: "rating-report", label: "Rating Agency Report", accept: ".pdf", required: false },
+  { id: "annual_report", label: "Annual Report", accept: ".pdf,.txt", required: true },
+  { id: "gst_data", label: "GST Data", accept: ".csv,.txt", required: true },
+  { id: "bank_statement", label: "Bank Statement", accept: ".csv,.pdf,.txt", required: true },
+  { id: "legal_notice", label: "Legal Notice", accept: ".pdf,.txt", required: false },
+  { id: "rating_report", label: "Rating Agency Report", accept: ".pdf,.txt", required: false },
 ];
 
 export default function NewEvaluation() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
+  const [saving, setSaving] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [evaluationId, setEvaluationId] = useState<string | null>(null);
+  const [companyId, setCompanyId] = useState<string | null>(null);
   const [uploads, setUploads] = useState<Record<string, { name: string; progress: number; status: string }>>({});
+  const [extractedData, setExtractedData] = useState<any>(null);
   const [formData, setFormData] = useState({
     companyName: "",
     industry: "",
@@ -41,38 +50,180 @@ export default function NewEvaluation() {
     collateral: "",
   });
 
-  const handleUpload = (docId: string, file: File) => {
-    setUploads((prev) => ({
-      ...prev,
-      [docId]: { name: file.name, progress: 0, status: "uploading" },
-    }));
-    // Simulate upload progress
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 30 + 10;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-        setUploads((prev) => ({
-          ...prev,
-          [docId]: { ...prev[docId], progress: 100, status: "parsed" },
-        }));
-      } else {
-        setUploads((prev) => ({
-          ...prev,
-          [docId]: { ...prev[docId], progress: Math.min(progress, 100) },
-        }));
-      }
-    }, 400);
+  const handleStep1Submit = async () => {
+    if (!formData.companyName || !formData.industry || !formData.loanAmount) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    setSaving(true);
+    try {
+      // Create company
+      const { data: company, error: companyErr } = await supabase
+        .from("companies")
+        .insert({
+          name: formData.companyName,
+          industry: formData.industry,
+          created_by: user!.id,
+        })
+        .select("id")
+        .single();
+      if (companyErr) throw companyErr;
+
+      // Create evaluation
+      const { data: evaluation, error: evalErr } = await supabase
+        .from("evaluations")
+        .insert({
+          company_id: company.id,
+          loan_amount_requested: parseFloat(formData.loanAmount),
+          existing_exposure: formData.existingExposure ? parseFloat(formData.existingExposure) : 0,
+          collateral_details: formData.collateral || null,
+          created_by: user!.id,
+          status: "draft",
+        })
+        .select("id")
+        .single();
+      if (evalErr) throw evalErr;
+
+      setCompanyId(company.id);
+      setEvaluationId(evaluation.id);
+
+      // Audit log
+      await supabase.from("audit_logs").insert({
+        evaluation_id: evaluation.id,
+        user_id: user!.id,
+        action: "Started new evaluation",
+        entity: formData.companyName,
+        details: `Created evaluation for ${formData.companyName} (${formData.industry}), Loan: ₹${formData.loanAmount}`,
+      });
+
+      toast.success("Company profile saved");
+      setCurrentStep(2);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const extractedData = [
-    { label: "Latest Revenue", value: "₹58.0 Cr", status: "ok" },
-    { label: "EBITDA", value: "₹11.6 Cr", status: "ok" },
-    { label: "Total Debt", value: "₹29.0 Cr", status: "flag" },
-    { label: "Active Legal Cases", value: "2", status: "flag" },
-    { label: "GST-Bank Mismatch", value: "8.5% (within threshold)", status: "ok" },
-  ];
+  const handleUpload = async (docId: string, file: File) => {
+    if (!evaluationId) return;
+    
+    setUploads((prev) => ({
+      ...prev,
+      [docId]: { name: file.name, progress: 10, status: "uploading" },
+    }));
+
+    try {
+      // Upload to storage
+      const filePath = `${evaluationId}/${docId}/${file.name}`;
+      const { error: uploadErr } = await supabase.storage
+        .from("documents")
+        .upload(filePath, file);
+      if (uploadErr) throw uploadErr;
+
+      setUploads((prev) => ({
+        ...prev,
+        [docId]: { ...prev[docId], progress: 40, status: "uploaded" },
+      }));
+
+      // Record in DB
+      await supabase.from("uploaded_documents").insert({
+        evaluation_id: evaluationId,
+        doc_type: docId as any,
+        file_name: file.name,
+        file_path: filePath,
+        file_size: file.size,
+        status: "uploaded",
+      });
+
+      // Read file text for AI analysis
+      const text = await file.text();
+      setUploads((prev) => ({
+        ...prev,
+        [docId]: { ...prev[docId], progress: 60, status: "parsing" },
+      }));
+
+      // Call AI analysis edge function
+      const { data: funcData, error: funcErr } = await supabase.functions.invoke("analyze-document", {
+        body: { evaluation_id: evaluationId, document_text: text.slice(0, 15000), doc_type: docId },
+      });
+
+      if (funcErr) throw funcErr;
+
+      setUploads((prev) => ({
+        ...prev,
+        [docId]: { name: file.name, progress: 100, status: "parsed" },
+      }));
+
+      // Audit log
+      await supabase.from("audit_logs").insert({
+        evaluation_id: evaluationId,
+        user_id: user!.id,
+        action: "Uploaded and parsed document",
+        entity: formData.companyName,
+        details: `${file.name} (${docId}) - AI extraction complete`,
+      });
+
+      toast.success(`${file.name} parsed successfully`);
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      setUploads((prev) => ({
+        ...prev,
+        [docId]: { ...prev[docId], progress: 0, status: "error" },
+      }));
+      toast.error(`Failed to process ${file.name}: ${err.message}`);
+    }
+  };
+
+  const handleProcessFinancials = async () => {
+    if (!evaluationId) return;
+    setProcessing(true);
+    try {
+      // Process financials
+      const { data: finData, error: finErr } = await supabase.functions.invoke("process-financials", {
+        body: { evaluation_id: evaluationId },
+      });
+      if (finErr) throw finErr;
+
+      // Compute risk score
+      const { data: riskData, error: riskErr } = await supabase.functions.invoke("compute-risk-score", {
+        body: { evaluation_id: evaluationId, qualitative_notes: "" },
+      });
+      if (riskErr) throw riskErr;
+
+      // Fetch extracted data for display
+      const { data: extracted } = await supabase
+        .from("extracted_financials")
+        .select("*")
+        .eq("evaluation_id", evaluationId)
+        .single();
+
+      setExtractedData(extracted);
+      setCurrentStep(3);
+      toast.success("Financial analysis complete");
+    } catch (err: any) {
+      toast.error(err.message || "Processing failed");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const displayData = extractedData
+    ? [
+        { label: "Latest Revenue", value: extractedData.revenue?.length ? `₹${extractedData.revenue[extractedData.revenue.length - 1]?.value?.toFixed(1)} Cr` : "N/A", status: "ok" },
+        { label: "EBITDA", value: extractedData.ebitda ? `₹${Number(extractedData.ebitda).toFixed(1)} Cr` : "N/A", status: "ok" },
+        { label: "Total Debt", value: extractedData.total_debt ? `₹${Number(extractedData.total_debt).toFixed(1)} Cr` : "N/A", status: Number(extractedData.debt_to_equity) > 2 ? "flag" : "ok" },
+        { label: "D/E Ratio", value: extractedData.debt_to_equity?.toFixed(2) || "N/A", status: Number(extractedData.debt_to_equity) > 2 ? "flag" : "ok" },
+        { label: "Active Legal Cases", value: String(extractedData.active_legal_cases || 0), status: extractedData.active_legal_cases > 0 ? "flag" : "ok" },
+        { label: "GST-Bank Mismatch", value: `${(extractedData.gst_bank_mismatch || 0).toFixed(1)}%`, status: extractedData.gst_bank_mismatch_flag ? "flag" : "ok" },
+      ]
+    : [
+        { label: "Latest Revenue", value: "₹58.0 Cr", status: "ok" },
+        { label: "EBITDA", value: "₹11.6 Cr", status: "ok" },
+        { label: "Total Debt", value: "₹29.0 Cr", status: "flag" },
+        { label: "Active Legal Cases", value: "2", status: "flag" },
+        { label: "GST-Bank Mismatch", value: "8.5%", status: "ok" },
+      ];
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
@@ -173,8 +324,9 @@ export default function NewEvaluation() {
               />
             </div>
             <div className="flex justify-end pt-2">
-              <Button onClick={() => setCurrentStep(2)} className="gap-2">
-                Continue <ArrowRight className="h-4 w-4" />
+              <Button onClick={handleStep1Submit} disabled={saving} className="gap-2">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {saving ? "Saving..." : "Continue"} <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
           </CardContent>
@@ -186,7 +338,7 @@ export default function NewEvaluation() {
         <Card className="shadow-card animate-fade-in">
           <CardHeader>
             <CardTitle>Document Upload</CardTitle>
-            <CardDescription>Upload financial documents for automated parsing and analysis</CardDescription>
+            <CardDescription>Upload financial documents for AI-powered parsing and analysis</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {documentTypes.map((doc) => (
@@ -203,17 +355,19 @@ export default function NewEvaluation() {
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <span className="truncate">{uploads[doc.id].name}</span>
                         {uploads[doc.id].status === "parsed" && (
-                          <Badge className="bg-success text-success-foreground text-[10px]">
-                            Parsed
-                          </Badge>
+                          <Badge className="bg-success text-success-foreground text-[10px]">Parsed</Badge>
+                        )}
+                        {uploads[doc.id].status === "parsing" && (
+                          <Badge variant="secondary" className="text-[10px]">AI Analyzing...</Badge>
+                        )}
+                        {uploads[doc.id].status === "error" && (
+                          <Badge variant="destructive" className="text-[10px]">Error</Badge>
                         )}
                       </div>
                       <Progress value={uploads[doc.id].progress} className="h-1.5" />
                     </div>
                   ) : (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Accepts: {doc.accept}
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">Accepts: {doc.accept}</p>
                   )}
                 </div>
                 <label className="cursor-pointer">
@@ -237,8 +391,9 @@ export default function NewEvaluation() {
               <Button variant="outline" onClick={() => setCurrentStep(1)}>
                 <ArrowLeft className="h-4 w-4 mr-1" /> Back
               </Button>
-              <Button onClick={() => setCurrentStep(3)} className="gap-2">
-                Continue <ArrowRight className="h-4 w-4" />
+              <Button onClick={handleProcessFinancials} disabled={processing} className="gap-2">
+                {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {processing ? "Processing..." : "Analyze & Continue"} <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
           </CardContent>
@@ -250,11 +405,11 @@ export default function NewEvaluation() {
         <Card className="shadow-card animate-fade-in">
           <CardHeader>
             <CardTitle>Extracted Data Summary</CardTitle>
-            <CardDescription>Review the automatically extracted financial data before proceeding</CardDescription>
+            <CardDescription>Review the AI-extracted financial data before proceeding</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {extractedData.map((item) => (
+              {displayData.map((item) => (
                 <div
                   key={item.label}
                   className={`p-4 rounded-lg border ${
@@ -273,7 +428,7 @@ export default function NewEvaluation() {
               <Button variant="outline" onClick={() => setCurrentStep(2)}>
                 <ArrowLeft className="h-4 w-4 mr-1" /> Back
               </Button>
-              <Button onClick={() => navigate("/evaluation/eval-001")} className="gap-2">
+              <Button onClick={() => navigate(`/evaluation/${evaluationId || "eval-001"}`)} className="gap-2">
                 Proceed to Analysis <ArrowRight className="h-4 w-4" />
               </Button>
             </div>

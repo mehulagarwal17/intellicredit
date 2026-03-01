@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Plus, TrendingUp, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { mockEvaluations } from "@/data/mockData";
 
 function getRiskColor(score: number) {
@@ -31,21 +33,75 @@ function formatCurrency(amount: number) {
   return `₹${amount.toLocaleString("en-IN")}`;
 }
 
+interface EvalRow {
+  id: string;
+  company_name: string;
+  industry: string;
+  loan_amount_requested: number;
+  risk_score: number | null;
+  status: string;
+  updated_at: string;
+}
+
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [evaluations, setEvaluations] = useState<EvalRow[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const filtered = mockEvaluations.filter(
+  useEffect(() => {
+    const fetchEvaluations = async () => {
+      const { data, error } = await supabase
+        .from("evaluations")
+        .select(`
+          id, loan_amount_requested, status, risk_score, updated_at,
+          companies!inner(name, industry)
+        `)
+        .order("updated_at", { ascending: false });
+
+      if (data && data.length > 0) {
+        setEvaluations(
+          data.map((e: any) => ({
+            id: e.id,
+            company_name: e.companies.name,
+            industry: e.companies.industry,
+            loan_amount_requested: Number(e.loan_amount_requested),
+            risk_score: e.risk_score ? Number(e.risk_score) : null,
+            status: e.status,
+            updated_at: new Date(e.updated_at).toISOString().split("T")[0],
+          }))
+        );
+      } else {
+        // Fallback to mock data for demo
+        setEvaluations(
+          mockEvaluations.map((e) => ({
+            id: e.id,
+            company_name: e.companyName,
+            industry: e.industry,
+            loan_amount_requested: e.loanAmountRequested,
+            risk_score: e.riskScore,
+            status: e.status === "completed" ? "completed" : "in_progress",
+            updated_at: e.lastUpdated,
+          }))
+        );
+      }
+      setLoading(false);
+    };
+    fetchEvaluations();
+  }, []);
+
+  const filtered = evaluations.filter(
     (e) =>
-      e.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      e.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       e.industry.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const stats = {
-    total: mockEvaluations.length,
-    completed: mockEvaluations.filter((e) => e.status === "completed").length,
-    inProgress: mockEvaluations.filter((e) => e.status === "in-progress").length,
-    highRisk: mockEvaluations.filter((e) => e.riskScore > 70).length,
+    total: evaluations.length,
+    completed: evaluations.filter((e) => e.status === "completed").length,
+    inProgress: evaluations.filter((e) => e.status === "in_progress" || e.status === "draft").length,
+    highRisk: evaluations.filter((e) => (e.risk_score || 0) > 70).length,
   };
 
   return (
@@ -150,45 +206,53 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((evaluation) => (
-                  <tr
-                    key={evaluation.id}
-                    className="border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/evaluation/${evaluation.id}`)}
-                  >
-                    <td className="py-3 px-4 font-medium">{evaluation.companyName}</td>
-                    <td className="py-3 px-4 text-muted-foreground">{evaluation.industry}</td>
-                    <td className="py-3 px-4 font-mono text-xs">
-                      {formatCurrency(evaluation.loanAmountRequested)}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getRiskBg(evaluation.riskScore)} ${getRiskColor(evaluation.riskScore)}`}
-                      >
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full bg-current`}
-                        />
-                        {evaluation.riskScore} – {getRiskLabel(evaluation.riskScore)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <Badge
-                        variant={evaluation.status === "completed" ? "default" : "secondary"}
-                        className="text-[10px] uppercase tracking-wider"
-                      >
-                        {evaluation.status === "completed" ? "Completed" : "In Progress"}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4 text-muted-foreground text-xs">
-                      {evaluation.lastUpdated}
-                    </td>
-                    <td className="py-3 px-4">
-                      <Button variant="ghost" size="sm" className="text-xs">
-                        View →
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {loading ? (
+                  <tr><td colSpan={7} className="text-center py-8 text-muted-foreground">Loading...</td></tr>
+                ) : filtered.length === 0 ? (
+                  <tr><td colSpan={7} className="text-center py-8 text-muted-foreground">No evaluations found</td></tr>
+                ) : (
+                  filtered.map((evaluation) => (
+                    <tr
+                      key={evaluation.id}
+                      className="border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/evaluation/${evaluation.id}`)}
+                    >
+                      <td className="py-3 px-4 font-medium">{evaluation.company_name}</td>
+                      <td className="py-3 px-4 text-muted-foreground">{evaluation.industry}</td>
+                      <td className="py-3 px-4 font-mono text-xs">
+                        {formatCurrency(evaluation.loan_amount_requested)}
+                      </td>
+                      <td className="py-3 px-4">
+                        {evaluation.risk_score !== null ? (
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getRiskBg(evaluation.risk_score)} ${getRiskColor(evaluation.risk_score)}`}
+                          >
+                            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                            {evaluation.risk_score} – {getRiskLabel(evaluation.risk_score)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Pending</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge
+                          variant={evaluation.status === "completed" ? "default" : "secondary"}
+                          className="text-[10px] uppercase tracking-wider"
+                        >
+                          {evaluation.status === "completed" ? "Completed" : evaluation.status === "draft" ? "Draft" : "In Progress"}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4 text-muted-foreground text-xs">
+                        {evaluation.updated_at}
+                      </td>
+                      <td className="py-3 px-4">
+                        <Button variant="ghost" size="sm" className="text-xs">
+                          View →
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
