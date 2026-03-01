@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ArrowLeft, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,8 @@ function getRiskCategory(score: number) {
 export default function EvaluationDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const camRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
   const [evalData, setEvalData] = useState<any>(null);
   const [financials, setFinancials] = useState<any>(null);
   const [riskScore, setRiskScore] = useState<any>(null);
@@ -167,8 +169,24 @@ export default function EvaluationDetail() {
             </div>
           </div>
         </div>
-        <Button variant="outline" className="gap-2">
-          <Download className="h-4 w-4" /> Export CAM
+        <Button variant="outline" className="gap-2" disabled={exporting} onClick={async () => {
+          setExporting(true);
+          try {
+            const html2pdf = (await import("html2pdf.js")).default;
+            const el = camRef.current;
+            if (!el) return;
+            await html2pdf().set({
+              margin: [10, 10, 10, 10],
+              filename: `CAM_${evalData.companyName.replace(/\s+/g, "_")}.pdf`,
+              image: { type: "jpeg", quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true },
+              jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+            }).from(el).save();
+          } finally {
+            setExporting(false);
+          }
+        }}>
+          <Download className="h-4 w-4" /> {exporting ? "Exporting..." : "Export CAM"}
         </Button>
       </div>
 
@@ -194,13 +212,15 @@ export default function EvaluationDetail() {
 
         <TabsContent value="cam">
           {financials && riskScore && loanRec && (
-            <CAMPreview
-              company={evalData.companyName}
-              industry={evalData.industry}
-              financials={financials}
-              riskScore={riskScore}
-              recommendation={loanRec}
-            />
+            <div ref={camRef}>
+              <CAMPreview
+                company={evalData.companyName}
+                industry={evalData.industry}
+                financials={financials}
+                riskScore={riskScore}
+                recommendation={loanRec}
+              />
+            </div>
           )}
         </TabsContent>
       </Tabs>
