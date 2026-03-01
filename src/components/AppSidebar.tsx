@@ -1,0 +1,107 @@
+import {
+  LayoutDashboard,
+  FilePlus2,
+  Search as SearchIcon,
+  FileText,
+  Shield,
+  CreditCard,
+  LogOut,
+} from "lucide-react";
+import { NavLink } from "@/components/NavLink";
+import { useLocation } from "react-router-dom";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarFooter,
+  SidebarHeader,
+  useSidebar,
+} from "@/components/ui/sidebar";
+
+const mainNav = [
+  { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "New Evaluation", url: "/new-evaluation", icon: FilePlus2 },
+  { title: "Research Agent", url: "/research", icon: SearchIcon },
+  { title: "Reports", url: "/reports", icon: FileText },
+  { title: "Audit Logs", url: "/audit", icon: Shield },
+];
+
+export function AppSidebar() {
+  const { state } = useSidebar();
+  const collapsed = state === "collapsed";
+  const location = useLocation();
+  const isActive = (path: string) =>
+    path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
+
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg gradient-corporate">
+            <CreditCard className="h-4 w-4 text-sidebar-primary-foreground" />
+          </div>
+          {!collapsed && (
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-sidebar-foreground tracking-tight">
+                IntelliCredit
+              </span>
+              <span className="text-[10px] text-sidebar-foreground/60 uppercase tracking-widest">
+                Credit Engine
+              </span>
+            </div>
+          )}
+        </div>
+      </SidebarHeader>
+
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-widest">
+            Modules
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {mainNav.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                    <NavLink
+                      to={item.url}
+                      end={item.url === "/"}
+                      className="hover:bg-sidebar-accent/50"
+                      activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                    >
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter className="border-t border-sidebar-border p-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-accent">
+            <span className="text-xs font-semibold text-sidebar-primary">RK</span>
+          </div>
+          {!collapsed && (
+            <div className="flex flex-col flex-1 min-w-0">
+              <span className="text-xs font-medium text-sidebar-foreground truncate">
+                Rajesh Kumar
+              </span>
+              <span className="text-[10px] text-sidebar-foreground/50">
+                Credit Officer
+              </span>
+            </div>
+          )}
+        </div>
+      </SidebarFooter>
+    </Sidebar>
+  );
+}
