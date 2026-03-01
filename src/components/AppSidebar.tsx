@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Sidebar,
   SidebarContent,
@@ -35,8 +36,15 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const { profile, role, signOut } = useAuth();
   const isActive = (path: string) =>
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
+
+  const initials = profile?.full_name
+    ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "U";
+
+  const roleLabel = role === "admin" ? "Admin" : role === "analyst" ? "Analyst" : "Credit Officer";
 
   return (
     <Sidebar collapsible="icon">
@@ -88,17 +96,26 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-sidebar-border p-3">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-accent">
-            <span className="text-xs font-semibold text-sidebar-primary">RK</span>
+            <span className="text-xs font-semibold text-sidebar-primary">{initials}</span>
           </div>
           {!collapsed && (
             <div className="flex flex-col flex-1 min-w-0">
               <span className="text-xs font-medium text-sidebar-foreground truncate">
-                Rajesh Kumar
+                {profile?.full_name || "User"}
               </span>
               <span className="text-[10px] text-sidebar-foreground/50">
-                Credit Officer
+                {roleLabel}
               </span>
             </div>
+          )}
+          {!collapsed && (
+            <button
+              onClick={signOut}
+              className="p-1.5 rounded-md hover:bg-sidebar-accent transition-colors"
+              title="Sign out"
+            >
+              <LogOut className="h-3.5 w-3.5 text-sidebar-foreground/50" />
+            </button>
           )}
         </div>
       </SidebarFooter>
