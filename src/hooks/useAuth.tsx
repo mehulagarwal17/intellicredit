@@ -16,6 +16,19 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+async function resolveAvatarUrl(storedUrl: string | null): Promise<string | null> {
+  if (!storedUrl) return null;
+  // Extract the file path from the stored URL
+  const match = storedUrl.match(/\/documents\/(.+)$/);
+  if (!match) return storedUrl;
+  const filePath = match[1];
+  const { data, error } = await supabase.storage
+    .from("documents")
+    .createSignedUrl(filePath, 3600); // 1 hour
+  if (error || !data?.signedUrl) return null;
+  return data.signedUrl;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -29,7 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select("full_name, email, avatar_url")
       .eq("user_id", userId)
       .single();
-    if (profileData) setProfile(profileData);
+    if (profileData) {
+      const signedAvatarUrl = await resolveAvatarUrl(profileData.avatar_url);
+      setProfile({ ...profileData, avatar_url: signedAvatarUrl });
+    }
 
     const { data: roleData } = await supabase
       .from("user_roles")

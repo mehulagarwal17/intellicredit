@@ -109,7 +109,7 @@ export default function Profile() {
 
     const { error: uploadError } = await supabase.storage
       .from("documents")
-      .upload(filePath, file, { upsert: true });
+      .upload(filePath, file, { upsert: true, contentType: file.type });
 
     if (uploadError) {
       toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
@@ -117,11 +117,12 @@ export default function Profile() {
       return;
     }
 
-    const { data: urlData } = supabase.storage.from("documents").getPublicUrl(filePath);
+    // Store a reference URL (the signed URL will be resolved by useAuth)
+    const refUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/documents/${filePath}`;
 
     const { error: updateError } = await supabase
       .from("profiles")
-      .update({ avatar_url: urlData.publicUrl })
+      .update({ avatar_url: refUrl })
       .eq("user_id", user.id);
 
     if (updateError) {
