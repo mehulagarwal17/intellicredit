@@ -27,22 +27,22 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  if (!user) return <Navigate to="/landing" replace />;
+  if (!user) return <Navigate to="/auth" replace />;
   return <>{children}</>;
 }
 
 function AuthRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return null;
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 
 const AppRoutes = () => (
   <Routes>
-    <Route path="/landing" element={<Landing />} />
+    <Route path="/" element={<Landing />} />
     <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
-    <Route path="/" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
+    <Route path="/dashboard" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
     <Route path="/new-evaluation" element={<ProtectedRoute><AppLayout><NewEvaluation /></AppLayout></ProtectedRoute>} />
     <Route path="/evaluation/:id" element={<ProtectedRoute><AppLayout><EvaluationDetail /></AppLayout></ProtectedRoute>} />
     <Route path="/research" element={<ProtectedRoute><AppLayout><ResearchAgent /></AppLayout></ProtectedRoute>} />
