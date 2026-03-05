@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, useInView, useScroll, useTransform } from "framer-motion";
+import { motion, AnimatePresence, useInView, useScroll, useTransform } from "framer-motion";
 import {
   Shield,
   Zap,
@@ -111,6 +111,35 @@ const stats = [
   { value: "50K+", label: "Evaluations Processed" },
   { value: "200+", label: "Financial Institutions" },
 ];
+const rotatingWords = ["Faster.", "Smarter.", "Sharper.", "Simpler.", "Better."];
+
+function RotatingWord() {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % rotatingWords.length);
+    }, 2200);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <span className="inline-block h-[1.1em] overflow-hidden align-bottom">
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={rotatingWords[index]}
+          initial={{ y: "100%", opacity: 0 }}
+          animate={{ y: "0%", opacity: 1 }}
+          exit={{ y: "-100%", opacity: 0 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="inline-block text-foreground"
+        >
+          {rotatingWords[index]}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  );
+}
 
 export default function Landing() {
   const heroRef = useRef(null);
@@ -189,7 +218,10 @@ export default function Landing() {
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.4 }}
               className="text-5xl md:text-7xl lg:text-8xl font-semibold tracking-tight leading-[0.9] text-muted-foreground"
             >
-              Decisions, Faster.
+              Decisions,{" "}
+              <span className="inline-block relative">
+                <RotatingWord />
+              </span>
             </motion.h1>
           </div>
 
