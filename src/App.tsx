@@ -11,6 +11,7 @@ import EvaluationDetail from "./pages/EvaluationDetail";
 import ResearchAgent from "./pages/ResearchAgent";
 import Reports from "./pages/Reports";
 import AuditLogs from "./pages/AuditLogs";
+import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -45,6 +46,7 @@ const AppRoutes = () => (
     <Route path="/research" element={<ProtectedRoute><AppLayout><ResearchAgent /></AppLayout></ProtectedRoute>} />
     <Route path="/reports" element={<ProtectedRoute><AppLayout><Reports /></AppLayout></ProtectedRoute>} />
     <Route path="/audit" element={<ProtectedRoute><AppLayout><AuditLogs /></AppLayout></ProtectedRoute>} />
+    <Route path="/profile" element={<ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

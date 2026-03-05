@@ -6,6 +6,7 @@ import {
   Shield,
   CreditCard,
   LogOut,
+  UserCog,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -93,10 +94,18 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-accent">
-            <span className="text-xs font-semibold text-sidebar-primary">{initials}</span>
+      <SidebarFooter className="border-t border-sidebar-border p-3 space-y-2">
+        <NavLink
+          to="/profile"
+          className="flex items-center gap-3 rounded-md px-2 py-1.5 text-sm hover:bg-sidebar-accent/50 transition-colors"
+          activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-accent overflow-hidden">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-xs font-semibold text-sidebar-primary">{initials}</span>
+            )}
           </div>
           {!collapsed && (
             <div className="flex flex-col flex-1 min-w-0">
@@ -108,16 +117,16 @@ export function AppSidebar() {
               </span>
             </div>
           )}
-          {!collapsed && (
-            <button
-              onClick={signOut}
-              className="p-1.5 rounded-md hover:bg-sidebar-accent transition-colors"
-              title="Sign out"
-            >
-              <LogOut className="h-3.5 w-3.5 text-sidebar-foreground/50" />
-            </button>
-          )}
-        </div>
+        </NavLink>
+        {!collapsed && (
+          <button
+            onClick={signOut}
+            className="flex items-center gap-2 w-full px-2 py-1.5 text-xs text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 rounded-md transition-colors"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            Sign out
+          </button>
+        )}
       </SidebarFooter>
     </Sidebar>
   );
