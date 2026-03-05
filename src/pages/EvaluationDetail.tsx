@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
-import { ArrowLeft, Download, Globe } from "lucide-react";
+import { ArrowLeft, Download, Globe, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +13,7 @@ import { CAMPreview } from "@/components/CAMPreview";
 import { EvaluationComments } from "@/components/EvaluationComments";
 import { WorkflowPanel } from "@/components/WorkflowPanel";
 import { CibilReportPanel } from "@/components/CibilReportPanel";
+import { exportCAMDocx } from "@/lib/exportCAMDocx";
 
 function formatCurrency(amount: number) {
   if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(1)} Cr`;
@@ -211,7 +212,14 @@ export default function EvaluationDetail() {
               setExporting(false);
             }
           }}>
-            <Download className="h-4 w-4" /> {exporting ? "Exporting..." : "Export CAM"}
+           <Download className="h-4 w-4" /> {exporting ? "Exporting..." : "Export PDF"}
+          </Button>
+          <Button variant="outline" className="gap-2" disabled={!financials || !riskScore || !loanRec} onClick={async () => {
+            if (financials && riskScore && loanRec) {
+              await exportCAMDocx(evalData.companyName, evalData.industry, financials, riskScore, loanRec);
+            }
+          }}>
+            <FileText className="h-4 w-4" /> Export DOCX
           </Button>
         </div>
       </div>
