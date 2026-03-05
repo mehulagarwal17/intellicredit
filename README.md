@@ -3,7 +3,13 @@
 ### AI-Powered Credit Intelligence Platform for Corporate Lending
 
 <p align="center">
-  <img src="https://skillicons.dev/icons?i=react,typescript,vite,tailwind,supabase,postgres,nodejs,python" />
+
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-38BDF8?style=for-the-badge&logo=tailwindcss)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql)
+
 </p>
 
 <p align="center">
@@ -17,6 +23,8 @@ AI-driven platform that automates corporate credit evaluation, financial analysi
 **IntelliCredit** is a modern fintech platform designed to streamline the **corporate credit evaluation workflow**.
 
 Traditional credit assessment requires manual review of financial documents, compliance reports, and risk factors. IntelliCredit automates this entire pipeline using intelligent document processing, financial analytics, and automated credit scoring.
+
+Deployed Link: https://intellicredit.lovable.app/
 
 The platform helps financial institutions:
 
