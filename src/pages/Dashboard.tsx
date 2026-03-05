@@ -225,8 +225,8 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Evaluations Table */}
-      <Card className="shadow-card overflow-hidden">
+      {/* Evaluations Table - Desktop */}
+      <Card className="shadow-card overflow-hidden hidden md:block">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Recent Evaluations</CardTitle>
@@ -311,6 +311,67 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Evaluations Cards - Mobile */}
+      <div className="md:hidden space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold">Recent Evaluations</h2>
+          <span className="text-xs text-muted-foreground">{filtered.length} of {evaluations.length}</span>
+        </div>
+        {loading ? (
+          <p className="text-center py-8 text-muted-foreground">Loading...</p>
+        ) : filtered.length === 0 ? (
+          <p className="text-center py-8 text-muted-foreground">No evaluations found</p>
+        ) : (
+          filtered.map((evaluation) => (
+            <Card
+              key={evaluation.id}
+              className="shadow-card cursor-pointer hover:shadow-elevated transition-shadow"
+              onClick={() => navigate(`/evaluation/${evaluation.id}`)}
+            >
+              <CardContent className="p-4 space-y-2">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-medium text-sm">{evaluation.company_name}</p>
+                    <p className="text-xs text-muted-foreground">{evaluation.industry}</p>
+                  </div>
+                  <Badge
+                    variant={
+                      evaluation.status === "approved" || evaluation.status === "completed" ? "default"
+                      : evaluation.status === "rejected" ? "destructive"
+                      : "secondary"
+                    }
+                    className="text-[10px] uppercase tracking-wider shrink-0"
+                  >
+                    {evaluation.status === "completed" ? "Completed"
+                      : evaluation.status === "draft" ? "Draft"
+                      : evaluation.status === "in_progress" ? "In Progress"
+                      : evaluation.status === "under_review" ? "Under Review"
+                      : evaluation.status === "approved" ? "Approved"
+                      : evaluation.status === "rejected" ? "Rejected"
+                      : evaluation.status === "archived" ? "Archived"
+                      : evaluation.status}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs">{formatCurrency(evaluation.loan_amount_requested)}</span>
+                  {evaluation.risk_score !== null ? (
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${getRiskBg(evaluation.risk_score)} ${getRiskColor(evaluation.risk_score)}`}
+                    >
+                      <span className="h-1 w-1 rounded-full bg-current" />
+                      {evaluation.risk_score} – {getRiskLabel(evaluation.risk_score)}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-muted-foreground">Pending</span>
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground">{evaluation.updated_at}</p>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 }

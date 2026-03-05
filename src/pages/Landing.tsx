@@ -11,6 +11,8 @@ import {
   CheckCircle2,
   Lock,
   Users,
+  Menu,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import appLogo from "@/assets/logo.png";
@@ -158,6 +160,7 @@ function RotatingWord() {
 }
 
 export default function Landing() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: heroRef,
@@ -185,7 +188,7 @@ export default function Landing() {
             <a href="#stats" className="hover:text-foreground transition-colors">Results</a>
             <a href="#cta" className="hover:text-foreground transition-colors">Get Started</a>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3">
             <Link to="/auth">
               <Button variant="ghost" size="sm">Sign In</Button>
             </Link>
@@ -195,7 +198,43 @@ export default function Landing() {
               </Button>
             </Link>
           </div>
+          {/* Mobile menu button */}
+          <button
+            className="md:hidden p-2 rounded-md hover:bg-muted transition-colors"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
+        {/* Mobile menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="md:hidden border-t border-border overflow-hidden"
+            >
+              <div className="px-6 py-4 space-y-3 bg-background">
+                <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
+                <a href="#stats" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-muted-foreground hover:text-foreground transition-colors">Results</a>
+                <a href="#cta" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-muted-foreground hover:text-foreground transition-colors">Get Started</a>
+                <div className="flex gap-3 pt-2">
+                  <Link to="/auth" className="flex-1">
+                    <Button variant="outline" size="sm" className="w-full">Sign In</Button>
+                  </Link>
+                  <Link to="/auth" className="flex-1">
+                    <Button size="sm" className="w-full gap-1.5">
+                      Get Started <ArrowRight className="h-3.5 w-3.5" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.nav>
 
       {/* Hero */}
@@ -378,7 +417,7 @@ export default function Landing() {
           <motion.div
             variants={fadeUp}
             custom={0}
-            className="rounded-2xl border border-border bg-card p-12 md:p-16 shadow-elevated"
+            className="rounded-2xl border border-border bg-card p-8 md:p-16 shadow-elevated"
           >
             <h2 className="text-3xl md:text-4xl font-semibold tracking-tight mb-4">
               Ready to transform your

@@ -162,7 +162,7 @@ export default function EvaluationDetail() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold">{evalData.companyName}</h1>
-            <div className="flex items-center gap-2 mt-1">
+           <div className="flex flex-wrap items-center gap-2 mt-1">
               <Badge variant="secondary">{evalData.industry}</Badge>
               <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${risk.colorClass}`}>
                 Score: {evalData.riskScore} – {risk.label}
@@ -216,11 +216,11 @@ export default function EvaluationDetail() {
       )}
 
       <Tabs defaultValue="financial" className="space-y-4">
-        <TabsList className="bg-muted/50">
-          <TabsTrigger value="financial">Financial Analysis</TabsTrigger>
-          <TabsTrigger value="risk">Risk Scoring</TabsTrigger>
-          <TabsTrigger value="recommendation">Recommendation</TabsTrigger>
-          <TabsTrigger value="cam">CAM Report</TabsTrigger>
+        <TabsList className="bg-muted/50 w-full overflow-x-auto flex justify-start">
+          <TabsTrigger value="financial" className="text-xs sm:text-sm">Financial Analysis</TabsTrigger>
+          <TabsTrigger value="risk" className="text-xs sm:text-sm">Risk Scoring</TabsTrigger>
+          <TabsTrigger value="recommendation" className="text-xs sm:text-sm">Recommendation</TabsTrigger>
+          <TabsTrigger value="cam" className="text-xs sm:text-sm">CAM Report</TabsTrigger>
         </TabsList>
 
         <TabsContent value="financial">
