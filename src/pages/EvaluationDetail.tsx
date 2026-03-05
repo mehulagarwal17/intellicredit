@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -173,37 +173,46 @@ export default function EvaluationDetail() {
             </div>
           </div>
         </div>
-        <Button variant="outline" className="gap-2" disabled={exporting} onClick={async () => {
-          setExporting(true);
-          try {
-            const html2canvas = (await import("html2canvas")).default;
-            const { jsPDF } = await import("jspdf");
-            const el = camRef.current;
-            if (!el) return;
-            const canvas = await html2canvas(el, { scale: 2, useCORS: true });
-            const imgData = canvas.toDataURL("image/jpeg", 0.98);
-            const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
-            const pageWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
-            const imgWidth = pageWidth - 20;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            let heightLeft = imgHeight;
-            let position = 10;
-            pdf.addImage(imgData, "JPEG", 10, position, imgWidth, imgHeight);
-            heightLeft -= (pageHeight - 20);
-            while (heightLeft > 0) {
-              position = -(pageHeight - 20) + 10;
-              pdf.addPage();
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => navigate(`/research?evaluation_id=${id}&company=${encodeURIComponent(evalData.companyName)}`)}
+          >
+            <Globe className="h-4 w-4" /> Run Research
+          </Button>
+          <Button variant="outline" className="gap-2" disabled={exporting} onClick={async () => {
+            setExporting(true);
+            try {
+              const html2canvas = (await import("html2canvas")).default;
+              const { jsPDF } = await import("jspdf");
+              const el = camRef.current;
+              if (!el) return;
+              const canvas = await html2canvas(el, { scale: 2, useCORS: true });
+              const imgData = canvas.toDataURL("image/jpeg", 0.98);
+              const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+              const pageWidth = pdf.internal.pageSize.getWidth();
+              const pageHeight = pdf.internal.pageSize.getHeight();
+              const imgWidth = pageWidth - 20;
+              const imgHeight = (canvas.height * imgWidth) / canvas.width;
+              let heightLeft = imgHeight;
+              let position = 10;
               pdf.addImage(imgData, "JPEG", 10, position, imgWidth, imgHeight);
               heightLeft -= (pageHeight - 20);
+              while (heightLeft > 0) {
+                position = -(pageHeight - 20) + 10;
+                pdf.addPage();
+                pdf.addImage(imgData, "JPEG", 10, position, imgWidth, imgHeight);
+                heightLeft -= (pageHeight - 20);
+              }
+              pdf.save(`CAM_${evalData.companyName.replace(/\s+/g, "_")}.pdf`);
+            } finally {
+              setExporting(false);
             }
-            pdf.save(`CAM_${evalData.companyName.replace(/\s+/g, "_")}.pdf`);
-          } finally {
-            setExporting(false);
-          }
-        }}>
-          <Download className="h-4 w-4" /> {exporting ? "Exporting..." : "Export CAM"}
-        </Button>
+          }}>
+            <Download className="h-4 w-4" /> {exporting ? "Exporting..." : "Export CAM"}
+          </Button>
+        </div>
       </div>
 
       {/* Workflow Panel */}

@@ -37,7 +37,7 @@ serve(async (req) => {
       userId = user.id;
     }
 
-    const { evaluation_id, qualitative_notes } = await req.json();
+    const { evaluation_id, qualitative_notes, news_risk_score } = await req.json();
 
     // Fetch extracted financials
     const { data: financials } = await supabase
@@ -89,8 +89,98 @@ serve(async (req) => {
     }
     complianceScore = Math.max(0, Math.min(100, complianceScore));
 
-    // === Litigation/News Score (simulated) ===
-    let litigationScore = 45;
+    // === Litigation/News Score — dynamic from web research ===
+    let litigationScore: number;
+    if (typeof news_risk_score === "number" && news_risk_score >= 0) {
+      litigationScore = Math.max(0, Math.min(100, news_risk_score));
+      if (litigationScore > 60) {
+        topDrivers.push(`High litigation/news risk from web research (score: ${litigationScore})`);
+      } else if (litigationScore > 40) {
+        topDrivers.push(`Moderate litigation/news signals detected (score: ${litigationScore})`);
+      }
+    } else {
+      // Fallback: run live research if Firecrawl is available
+      const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+
+      if (FIRECRAWL_API_KEY && LOVABLE_API_KEY) {
+        // Get company name for search
+        const { data: evalRow } = await supabase
+          .from("evaluations")
+          .select("*, companies!inner(name)")
+          .eq("id", evaluation_id)
+          .single();
+
+        const companyName = (evalRow as any)?.companies?.name || "";
+
+        if (companyName) {
+          try {
+            const queries = [
+              `${companyName} latest news India`,
+              `${companyName} litigation legal cases NCLT India`,
+            ];
+
+            const searchPromises = queries.map((query) =>
+              fetch("https://api.firecrawl.dev/v1/search", {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ query, limit: 5, lang: "en", country: "in", tbs: "qdr:m" }),
+              }).then((r) => r.json()).catch(() => ({ data: [] }))
+            );
+
+            const searchResults = await Promise.all(searchPromises);
+            const allItems: any[] = [];
+            for (const r of searchResults) {
+              for (const item of (r?.data || [])) {
+                allItems.push({ title: item.title || "", description: item.description || "" });
+              }
+            }
+
+            // AI sentiment analysis
+            const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: "google/gemini-2.5-flash-lite",
+                messages: [
+                  { role: "system", content: "You are a credit risk analyst. Analyze these news results and return ONLY a JSON object with: negative_count (number), litigation_count (number), risk_score (number 0-100 where higher = more risky)." },
+                  { role: "user", content: `Company: ${companyName}\nSearch results:\n${JSON.stringify(allItems.slice(0, 15))}` },
+                ],
+              }),
+            });
+
+            if (aiResp.ok) {
+              const aiData = await aiResp.json();
+              const content = aiData.choices?.[0]?.message?.content || "{}";
+              try {
+                const parsed = JSON.parse(content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim());
+                litigationScore = Math.max(0, Math.min(100, parsed.risk_score || 45));
+                if (parsed.negative_count > 0) topDrivers.push(`${parsed.negative_count} negative news articles found via web research`);
+                if (parsed.litigation_count > 0) topDrivers.push(`${parsed.litigation_count} litigation-related articles found`);
+              } catch {
+                litigationScore = 45;
+              }
+            } else {
+              litigationScore = 45;
+            }
+          } catch (e) {
+            console.error("Auto research failed:", e);
+            litigationScore = 45;
+          }
+        } else {
+          litigationScore = 45;
+        }
+      } else {
+        litigationScore = 45;
+        topDrivers.push("News/litigation score defaulted — no web research data available");
+      }
+    }
 
     // === Qualitative Assessment ===
     let qualitativeScore = 40;
