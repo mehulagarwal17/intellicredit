@@ -13,6 +13,7 @@ import { CAMPreview } from "@/components/CAMPreview";
 import { EvaluationComments } from "@/components/EvaluationComments";
 import { WorkflowPanel } from "@/components/WorkflowPanel";
 import { CibilReportPanel } from "@/components/CibilReportPanel";
+import { GSTReconciliationPanel } from "@/components/GSTReconciliationPanel";
 import { exportCAMDocx } from "@/lib/exportCAMDocx";
 
 function formatCurrency(amount: number) {
@@ -236,6 +237,7 @@ export default function EvaluationDetail() {
       <Tabs defaultValue="financial" className="space-y-4">
         <TabsList className="bg-muted/50 w-full overflow-x-auto flex justify-start">
           <TabsTrigger value="financial" className="text-xs sm:text-sm">Financial Analysis</TabsTrigger>
+          <TabsTrigger value="gst" className="text-xs sm:text-sm">GST Reconciliation</TabsTrigger>
           <TabsTrigger value="cibil" className="text-xs sm:text-sm">CIBIL Report</TabsTrigger>
           <TabsTrigger value="risk" className="text-xs sm:text-sm">Risk Scoring</TabsTrigger>
           <TabsTrigger value="recommendation" className="text-xs sm:text-sm">Recommendation</TabsTrigger>
@@ -244,6 +246,10 @@ export default function EvaluationDetail() {
 
         <TabsContent value="financial">
           {financials && <FinancialAnalysis data={financials} />}
+        </TabsContent>
+
+        <TabsContent value="gst">
+          {id && <GSTReconciliationPanel evaluationId={id} />}
         </TabsContent>
 
         <TabsContent value="cibil">

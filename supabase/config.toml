@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.process-financials]
 verify_jwt = false
+
+[functions.reconcile-gst]
+verify_jwt = false
