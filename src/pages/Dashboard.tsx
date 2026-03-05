@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Plus, TrendingUp, AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { Search, Plus, TrendingUp, AlertTriangle, CheckCircle, Clock, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { mockEvaluations } from "@/data/mockData";
+import { DashboardAnalytics } from "@/components/DashboardAnalytics";
+import { EvaluationFilters } from "@/components/EvaluationFilters";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 function getRiskColor(score: number) {
   if (score <= 40) return "risk-low";
@@ -47,6 +50,9 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [evaluations, setEvaluations] = useState<EvalRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAnalytics, setShowAnalytics] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({ status: "all", riskLevel: "all", industry: "all" });
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -73,7 +79,6 @@ export default function Dashboard() {
           }))
         );
       } else {
-        // Fallback to mock data for demo
         setEvaluations(
           mockEvaluations.map((e) => ({
             id: e.id,
@@ -91,11 +96,22 @@ export default function Dashboard() {
     fetchEvaluations();
   }, []);
 
-  const filtered = evaluations.filter(
-    (e) =>
+  const industries = [...new Set(evaluations.map((e) => e.industry))].sort();
+
+  const filtered = evaluations.filter((e) => {
+    const matchesSearch =
       e.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      e.industry.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      e.industry.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = filters.status === "all" || e.status === filters.status;
+    const matchesRisk =
+      filters.riskLevel === "all" ||
+      (filters.riskLevel === "low" && e.risk_score !== null && e.risk_score <= 40) ||
+      (filters.riskLevel === "medium" && e.risk_score !== null && e.risk_score > 40 && e.risk_score <= 70) ||
+      (filters.riskLevel === "high" && e.risk_score !== null && e.risk_score > 70) ||
+      (filters.riskLevel === "pending" && e.risk_score === null);
+    const matchesIndustry = filters.industry === "all" || e.industry === filters.industry;
+    return matchesSearch && matchesStatus && matchesRisk && matchesIndustry;
+  });
 
   const stats = {
     total: evaluations.length,
@@ -175,21 +191,47 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search company or industry..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
-        />
+      {/* Analytics Charts */}
+      <Collapsible open={showAnalytics} onOpenChange={setShowAnalytics}>
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" size="sm" className="text-xs gap-1 mb-2">
+            <TrendingUp className="h-3 w-3" />
+            {showAnalytics ? "Hide Analytics" : "Show Analytics"}
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <DashboardAnalytics evaluations={evaluations} />
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* Search + Filters */}
+      <div className="space-y-3">
+        <div className="flex gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search company or industry..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Button variant="outline" size="sm" className="gap-1 h-10" onClick={() => setShowFilters(!showFilters)}>
+            <Filter className="h-3.5 w-3.5" /> Filters
+          </Button>
+        </div>
+        {showFilters && (
+          <EvaluationFilters filters={filters} onFiltersChange={setFilters} industries={industries} />
+        )}
       </div>
 
       {/* Evaluations Table */}
       <Card className="shadow-card overflow-hidden">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Recent Evaluations</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Recent Evaluations</CardTitle>
+            <span className="text-xs text-muted-foreground">{filtered.length} of {evaluations.length}</span>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
