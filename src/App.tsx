@@ -13,6 +13,7 @@ import Reports from "./pages/Reports";
 import AuditLogs from "./pages/AuditLogs";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
+import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,7 +27,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  if (!user) return <Navigate to="/auth" replace />;
+  if (!user) return <Navigate to="/landing" replace />;
   return <>{children}</>;
 }
 
@@ -39,6 +40,7 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 
 const AppRoutes = () => (
   <Routes>
+    <Route path="/landing" element={<Landing />} />
     <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
     <Route path="/" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
     <Route path="/new-evaluation" element={<ProtectedRoute><AppLayout><NewEvaluation /></AppLayout></ProtectedRoute>} />
