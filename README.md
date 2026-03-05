@@ -1,73 +1,170 @@
-# Welcome to your Lovable project
+<p align="center">
+  <img src="src/assets/logo.png" alt="IntelliCredit" width="80" />
+</p>
 
-## Project info
+<h1 align="center">IntelliCredit</h1>
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+<p align="center">
+  <strong>AI-Powered Credit Decision Support System for Indian Corporate Lending</strong>
+</p>
 
-## How can I edit this code?
+<p align="center">
+  <a href="https://intellicredit.lovable.app">Live Demo</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#tech-stack">Tech Stack</a> ·
+  <a href="#getting-started">Getting Started</a>
+</p>
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## Overview
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+IntelliCredit is an enterprise-grade platform that transforms credit evaluation workflows for mid-sized corporate loan applications. It leverages AI to analyze financials, score risk, and generate comprehensive credit memos — reducing decision time from **weeks to hours**.
 
-Changes made via Lovable will be committed automatically to this repo.
+Built for credit officers, analysts, and risk managers in the Indian financial ecosystem.
 
-**Use your preferred IDE**
+## Features
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 🧠 AI-Powered Analysis
+- Automated financial ratio analysis (DSCR, D/E, EBITDA margins, current ratio)
+- AI-driven risk scoring with weighted multi-factor components
+- Intelligent loan recommendations with interest rate suggestions
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 📄 Smart Document Processing
+- Upload & parse annual reports, GST filings, bank statements, and legal notices
+- Automated data extraction and structuring via edge functions
+- GST-bank statement mismatch detection
 
-Follow these steps:
+### 📊 Risk Scoring Engine
+- **Financial Strength** — balance sheet & profitability metrics
+- **Compliance Health** — GST consistency, regulatory adherence
+- **Litigation & News** — active legal case tracking, sentiment analysis
+- **Qualitative Assessment** — management quality, industry outlook
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+### 🔄 Workflow Management
+- Full evaluation lifecycle: `Draft → In Progress → Under Review → Approved / Rejected`
+- Role-based access control (Admin, Credit Officer, Analyst)
+- Workflow history tracking with comments
+
+### 🔍 Research Agent
+- AI-powered company research and news aggregation
+- Sentiment-tagged news feed integration
+
+### 📈 Dashboard & Reporting
+- Real-time analytics with evaluation metrics
+- CAM (Credit Appraisal Memo) preview & PDF export
+- Comprehensive audit logs for regulatory compliance
+
+### 🔔 Notifications
+- Real-time notification system for evaluation updates
+- Status change alerts across the workflow
+
+### 🔐 Authentication & Security
+- Email-based authentication with verification
+- Row-Level Security (RLS) on all database tables
+- Role-based access via `user_roles` table with `has_role()` security definer function
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | React 18, TypeScript, Vite |
+| **Styling** | Tailwind CSS, shadcn/ui, Framer Motion |
+| **State** | TanStack React Query |
+| **Backend** | Lovable Cloud (Supabase) |
+| **Database** | PostgreSQL with RLS policies |
+| **Edge Functions** | Deno (document analysis, risk scoring, financial processing) |
+| **PDF Generation** | jsPDF + html2canvas |
+| **Charts** | Recharts |
+
+## Database Schema
+
+```
+companies ─────────┐
+                    ├── evaluations ──┬── extracted_financials
+profiles            │                 ├── risk_scores
+user_roles          │                 ├── loan_recommendations
+                    │                 ├── uploaded_documents
+                    │                 ├── evaluation_comments
+                    │                 ├── workflow_history
+                    │                 ├── audit_logs
+                    │                 └── notifications
+```
+
+### Key Enums
+- **Evaluation Status:** `draft` · `in_progress` · `under_review` · `completed` · `approved` · `rejected` · `archived`
+- **Document Types:** `annual_report` · `gst_data` · `bank_statement` · `legal_notice` · `rating_report`
+- **Risk Categories:** `low` · `medium` · `high`
+- **User Roles:** `admin` · `credit_officer` · `analyst`
+
+## Edge Functions
+
+| Function | Purpose |
+|----------|---------|
+| `analyze-document` | Parses uploaded documents and extracts structured data |
+| `compute-risk-score` | Calculates weighted risk scores from financial & qualitative data |
+| `process-financials` | Processes raw financial data into standardized metrics |
+
+## Getting Started
+
+### Prerequisites
+- Node.js 18+ & npm
+
+### Installation
+
+```bash
+# Clone the repository
 git clone <YOUR_GIT_URL>
+cd intellicredit
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Install dependencies
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The app will be available at `http://localhost:5173`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Scripts
 
-**Use GitHub Codespaces**
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start dev server |
+| `npm run build` | Production build |
+| `npm run test` | Run tests |
+| `npm run lint` | Lint codebase |
+| `npm run preview` | Preview production build |
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Project Structure
 
-## What technologies are used for this project?
+```
+src/
+├── assets/            # Static assets (logo, images)
+├── components/        # Reusable UI components
+│   ├── ui/            # shadcn/ui primitives
+│   ├── AppLayout.tsx  # Authenticated app shell
+│   ├── AppSidebar.tsx # Navigation sidebar
+│   └── ...            # Feature components
+├── data/              # Mock data for development
+├── hooks/             # Custom React hooks (auth, toast, mobile)
+├── integrations/      # Supabase client & types (auto-generated)
+├── pages/             # Route-level page components
+│   ├── Landing.tsx    # Marketing landing page
+│   ├── Auth.tsx       # Login / signup
+│   ├── Dashboard.tsx  # Main dashboard
+│   ├── NewEvaluation.tsx
+│   ├── EvaluationDetail.tsx
+│   ├── ResearchAgent.tsx
+│   ├── Reports.tsx
+│   ├── AuditLogs.tsx
+│   └── Profile.tsx
+├── types/             # TypeScript type definitions
+└── lib/               # Utility functions
+supabase/
+└── functions/         # Edge functions (Deno)
+```
 
-This project is built with:
+## License
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Private — All rights reserved © 2026 IntelliCredit.
