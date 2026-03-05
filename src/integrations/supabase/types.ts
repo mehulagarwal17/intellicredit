@@ -504,6 +504,44 @@ export type Database = {
         }
         Relationships: []
       }
+      workflow_history: {
+        Row: {
+          changed_by: string
+          comment: string | null
+          created_at: string
+          evaluation_id: string
+          from_status: string
+          id: string
+          to_status: string
+        }
+        Insert: {
+          changed_by: string
+          comment?: string | null
+          created_at?: string
+          evaluation_id: string
+          from_status: string
+          id?: string
+          to_status: string
+        }
+        Update: {
+          changed_by?: string
+          comment?: string | null
+          created_at?: string
+          evaluation_id?: string
+          from_status?: string
+          id?: string
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_history_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "evaluations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -526,7 +564,14 @@ export type Database = {
         | "bank_statement"
         | "legal_notice"
         | "rating_report"
-      evaluation_status: "draft" | "in_progress" | "completed" | "archived"
+      evaluation_status:
+        | "draft"
+        | "in_progress"
+        | "completed"
+        | "archived"
+        | "under_review"
+        | "approved"
+        | "rejected"
       risk_category: "low" | "medium" | "high"
     }
     CompositeTypes: {
@@ -664,7 +709,15 @@ export const Constants = {
         "legal_notice",
         "rating_report",
       ],
-      evaluation_status: ["draft", "in_progress", "completed", "archived"],
+      evaluation_status: [
+        "draft",
+        "in_progress",
+        "completed",
+        "archived",
+        "under_review",
+        "approved",
+        "rejected",
+      ],
       risk_category: ["low", "medium", "high"],
     },
   },

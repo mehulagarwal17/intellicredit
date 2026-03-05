@@ -11,6 +11,7 @@ import { RiskScorePanel } from "@/components/RiskScorePanel";
 import { LoanRecommendationPanel } from "@/components/LoanRecommendationPanel";
 import { CAMPreview } from "@/components/CAMPreview";
 import { EvaluationComments } from "@/components/EvaluationComments";
+import { WorkflowPanel } from "@/components/WorkflowPanel";
 
 function formatCurrency(amount: number) {
   if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(1)} Cr`;
@@ -24,28 +25,33 @@ function getRiskCategory(score: number) {
   return { label: "High Risk", colorClass: "text-risk-high bg-risk-high-bg" };
 }
 
+type EvalStatus = "draft" | "in_progress" | "under_review" | "approved" | "rejected" | "completed" | "archived";
+
 export default function EvaluationDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const camRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState(false);
   const [evalData, setEvalData] = useState<any>(null);
+  const [evalStatus, setEvalStatus] = useState<EvalStatus>("draft");
   const [financials, setFinancials] = useState<any>(null);
   const [riskScore, setRiskScore] = useState<any>(null);
   const [loanRec, setLoanRec] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isMock, setIsMock] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
-      // Check if this is a mock ID
       const mockEval = mockEvaluations.find((e) => e.id === id);
       if (mockEval) {
+        setIsMock(true);
         setEvalData({
           companyName: mockEval.companyName,
           industry: mockEval.industry,
           riskScore: mockEval.riskScore,
           loanAmountRequested: mockEval.loanAmountRequested,
         });
+        setEvalStatus(mockEval.status === "completed" ? "completed" : "in_progress");
         setFinancials(mockFinancialData);
         setRiskScore(mockRiskScore);
         setLoanRec(mockLoanRecommendation);
@@ -53,7 +59,6 @@ export default function EvaluationDetail() {
         return;
       }
 
-      // Fetch real data
       const { data: evaluation } = await supabase
         .from("evaluations")
         .select("*, companies!inner(name, industry)")
@@ -67,8 +72,8 @@ export default function EvaluationDetail() {
           riskScore: evaluation.risk_score ? Number(evaluation.risk_score) : 0,
           loanAmountRequested: Number(evaluation.loan_amount_requested),
         });
+        setEvalStatus(evaluation.status as EvalStatus);
 
-        // Fetch financials
         const { data: fin } = await supabase
           .from("extracted_financials")
           .select("*")
@@ -93,7 +98,6 @@ export default function EvaluationDetail() {
           setFinancials(mockFinancialData);
         }
 
-        // Fetch risk score
         const { data: risk } = await supabase
           .from("risk_scores")
           .select("*")
@@ -114,7 +118,6 @@ export default function EvaluationDetail() {
           setRiskScore(mockRiskScore);
         }
 
-        // Fetch loan recommendation
         const { data: loan } = await supabase
           .from("loan_recommendations")
           .select("*")
@@ -202,6 +205,15 @@ export default function EvaluationDetail() {
           <Download className="h-4 w-4" /> {exporting ? "Exporting..." : "Export CAM"}
         </Button>
       </div>
+
+      {/* Workflow Panel */}
+      {!isMock && id && (
+        <WorkflowPanel
+          evaluationId={id}
+          currentStatus={evalStatus}
+          onStatusChange={(newStatus) => setEvalStatus(newStatus)}
+        />
+      )}
 
       <Tabs defaultValue="financial" className="space-y-4">
         <TabsList className="bg-muted/50">
