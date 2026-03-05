@@ -4,8 +4,29 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { mockNewsItems, mockRiskScore } from "@/data/mockData";
-import { AlertTriangle, TrendingDown, TrendingUp, Plus, Search } from "lucide-react";
+import { mockRiskScore } from "@/data/mockData";
+import { AlertTriangle, TrendingDown, TrendingUp, Minus, Search, Globe, Loader2, ExternalLink, Shield, Scale, Newspaper, Building2, Users } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+type ResearchResult = {
+  headline: string;
+  source: string;
+  date: string;
+  sentiment: "positive" | "negative" | "neutral";
+  category: "news" | "litigation" | "regulatory" | "financial" | "management";
+  risk_signal: boolean;
+  summary: string;
+  url?: string;
+};
+
+type SearchMeta = {
+  total_results: number;
+  risk_signals: number;
+  negative_count: number;
+  litigation_count: number;
+  computed_news_risk_score: number;
+};
 
 const qualitativeKeywords: Record<string, number> = {
   "low capacity": 5,
@@ -17,10 +38,57 @@ const qualitativeKeywords: Record<string, number> = {
   "fraud allegation": 10,
 };
 
+const categoryIcons: Record<string, React.ReactNode> = {
+  news: <Newspaper className="h-4 w-4" />,
+  litigation: <Scale className="h-4 w-4" />,
+  regulatory: <Shield className="h-4 w-4" />,
+  financial: <TrendingUp className="h-4 w-4" />,
+  management: <Users className="h-4 w-4" />,
+};
+
 export default function ResearchAgent() {
+  const [companyName, setCompanyName] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [results, setResults] = useState<ResearchResult[]>([]);
+  const [searchMeta, setSearchMeta] = useState<SearchMeta | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
+
   const [notes, setNotes] = useState("");
   const [adjustments, setAdjustments] = useState<{ keyword: string; impact: number }[]>([]);
   const [baseScore] = useState(mockRiskScore.overall);
+
+  const handleSearch = async () => {
+    if (!companyName.trim()) {
+      toast.error("Please enter a company name");
+      return;
+    }
+
+    setSearching(true);
+    setResults([]);
+    setSearchMeta(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("research-search", {
+        body: { company_name: companyName.trim() },
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        setResults(data.results || []);
+        setSearchMeta(data.meta || null);
+        setHasSearched(true);
+        toast.success(`Found ${data.results?.length || 0} results`);
+      } else {
+        throw new Error(data?.error || "Search failed");
+      }
+    } catch (err: any) {
+      console.error("Research search error:", err);
+      toast.error(err.message || "Failed to search. Please try again.");
+    } finally {
+      setSearching(false);
+    }
+  };
 
   const analyzeNotes = () => {
     const found: { keyword: string; impact: number }[] = [];
@@ -34,56 +102,181 @@ export default function ResearchAgent() {
   };
 
   const totalAdjustment = adjustments.reduce((sum, a) => sum + a.impact, 0);
-  const adjustedScore = Math.min(100, baseScore + totalAdjustment);
+  const newsAdjustment = searchMeta ? Math.round((searchMeta.computed_news_risk_score - 30) * 0.2) : 0;
+  const adjustedScore = Math.min(100, baseScore + totalAdjustment + newsAdjustment);
+
+  const sentimentIcon = (sentiment: string) => {
+    if (sentiment === "negative") return <TrendingDown className="h-4 w-4 text-destructive" />;
+    if (sentiment === "positive") return <TrendingUp className="h-4 w-4 text-success" />;
+    return <Minus className="h-4 w-4 text-muted-foreground" />;
+  };
+
+  const sentimentColor = (sentiment: string) => {
+    if (sentiment === "negative") return "text-destructive";
+    if (sentiment === "positive") return "text-success";
+    return "text-muted-foreground";
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-2xl font-bold">Research Agent</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Market intelligence, litigation monitoring, and qualitative risk analysis
+          Live web intelligence, litigation monitoring, and qualitative risk analysis
         </p>
       </div>
 
+      {/* Search Bar */}
+      <Card className="shadow-card">
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 relative">
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Enter company name (e.g. Reliance Infra Ventures Ltd)"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                className="pl-10"
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              />
+            </div>
+            <Button onClick={handleSearch} disabled={searching} className="gap-2 min-w-[160px]">
+              {searching ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Researching...
+                </>
+              ) : (
+                <>
+                  <Globe className="h-4 w-4" /> Search Web
+                </>
+              )}
+            </Button>
+          </div>
+          {searching && (
+            <div className="mt-4 p-4 rounded-lg bg-muted/30 border border-dashed">
+              <p className="text-sm text-muted-foreground text-center animate-pulse">
+                🔍 Crawling news, litigation records, regulatory filings, and sector intelligence...
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Search Meta Summary */}
+      {searchMeta && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <Card className="shadow-card">
+            <CardContent className="pt-4 pb-3">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Results</p>
+              <p className="text-2xl font-bold font-mono mt-1">{searchMeta.total_results}</p>
+            </CardContent>
+          </Card>
+          <Card className="shadow-card">
+            <CardContent className="pt-4 pb-3">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Risk Signals</p>
+              <p className={`text-2xl font-bold font-mono mt-1 ${searchMeta.risk_signals > 0 ? "text-destructive" : "text-success"}`}>
+                {searchMeta.risk_signals}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="shadow-card">
+            <CardContent className="pt-4 pb-3">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Negative News</p>
+              <p className={`text-2xl font-bold font-mono mt-1 ${searchMeta.negative_count > 2 ? "text-destructive" : "text-warning"}`}>
+                {searchMeta.negative_count}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="shadow-card">
+            <CardContent className="pt-4 pb-3">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">News Risk Score</p>
+              <p className={`text-2xl font-bold font-mono mt-1 ${
+                searchMeta.computed_news_risk_score <= 40 ? "text-success" :
+                searchMeta.computed_news_risk_score <= 70 ? "text-warning" : "text-destructive"
+              }`}>
+                {searchMeta.computed_news_risk_score}/100
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* News Feed */}
+        {/* Live Research Results */}
         <Card className="shadow-card">
           <CardHeader>
-            <CardTitle className="text-base">Latest Market Intelligence</CardTitle>
-            <CardDescription>Simulated news feed and sector alerts</CardDescription>
+            <CardTitle className="text-base">
+              {hasSearched ? `Research Results for "${companyName}"` : "Market Intelligence"}
+            </CardTitle>
+            <CardDescription>
+              {hasSearched
+                ? `${results.length} articles analyzed with AI sentiment detection`
+                : "Enter a company name above to search live news, litigation, and regulatory filings"}
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {mockNewsItems.map((item) => (
-              <div key={item.id} className="flex gap-3 p-3 rounded-lg border bg-muted/20">
-                <div className="shrink-0 mt-0.5">
-                  {item.sentiment === "negative" ? (
-                    <TrendingDown className="h-4 w-4 text-destructive" />
-                  ) : (
-                    <TrendingUp className="h-4 w-4 text-success" />
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium leading-snug">{item.headline}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] text-muted-foreground">{item.source}</span>
-                    <span className="text-[10px] text-muted-foreground">•</span>
-                    <span className="text-[10px] text-muted-foreground">{item.date}</span>
-                    <Badge
-                      variant="secondary"
-                      className={`text-[10px] ${
-                        item.sentiment === "negative" ? "text-destructive" : "text-success"
-                      }`}
-                    >
-                      {item.sentiment}
-                    </Badge>
-                  </div>
-                </div>
+          <CardContent>
+            {!hasSearched && !searching && (
+              <div className="text-center py-10 text-muted-foreground">
+                <Globe className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                <p className="text-sm">No research data yet</p>
+                <p className="text-xs mt-1">Search for a company to start live web intelligence</p>
               </div>
-            ))}
+            )}
+
+            {results.length > 0 && (
+              <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                {results.map((item, idx) => (
+                  <div key={idx} className={`flex gap-3 p-3 rounded-lg border ${
+                    item.risk_signal ? "border-destructive/30 bg-destructive/5" : "bg-muted/20"
+                  }`}>
+                    <div className="shrink-0 mt-0.5">
+                      {sentimentIcon(item.sentiment)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium leading-snug">{item.headline}</p>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{item.summary}</p>
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                        <span className="text-[10px] text-muted-foreground">{item.source}</span>
+                        <span className="text-[10px] text-muted-foreground">•</span>
+                        <span className="text-[10px] text-muted-foreground">{item.date}</span>
+                        <Badge variant="secondary" className={`text-[10px] ${sentimentColor(item.sentiment)}`}>
+                          {item.sentiment}
+                        </Badge>
+                        <Badge variant="outline" className="text-[10px] gap-1">
+                          {categoryIcons[item.category] || null}
+                          {item.category}
+                        </Badge>
+                        {item.risk_signal && (
+                          <Badge variant="destructive" className="text-[10px]">
+                            ⚠ Risk Signal
+                          </Badge>
+                        )}
+                      </div>
+                      {item.url && (
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline mt-1.5"
+                        >
+                          <ExternalLink className="h-3 w-3" /> View Source
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {hasSearched && results.length === 0 && !searching && (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No relevant results found. Try a different company name.
+              </p>
+            )}
           </CardContent>
         </Card>
 
-        {/* Due Diligence Notes */}
+        {/* Due Diligence Notes + Risk Adjustments */}
         <div className="space-y-4">
           <Card className="shadow-card">
             <CardHeader>
@@ -117,6 +310,19 @@ export default function ResearchAgent() {
                 <span className="font-mono font-semibold">{baseScore}</span>
               </div>
 
+              {/* Web research adjustment */}
+              {searchMeta && newsAdjustment !== 0 && (
+                <div className="flex items-center justify-between p-3 rounded-lg border border-primary/30 bg-primary/5">
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-sm">Web Research Signal</span>
+                  </div>
+                  <span className={`font-mono text-sm font-medium ${newsAdjustment > 0 ? "text-destructive" : "text-success"}`}>
+                    {newsAdjustment > 0 ? "+" : ""}{newsAdjustment}
+                  </span>
+                </div>
+              )}
+
               {adjustments.length > 0 ? (
                 <div className="space-y-2">
                   {adjustments.map((adj, i) => (
@@ -138,7 +344,7 @@ export default function ResearchAgent() {
               <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/20">
                 <span className="text-sm font-medium">Adjusted Risk Score</span>
                 <span className={`font-mono text-lg font-bold ${
-                  adjustedScore <= 40 ? "text-risk-low" : adjustedScore <= 70 ? "text-risk-medium" : "text-risk-high"
+                  adjustedScore <= 40 ? "text-success" : adjustedScore <= 70 ? "text-warning" : "text-destructive"
                 }`}>
                   {adjustedScore}
                 </span>
