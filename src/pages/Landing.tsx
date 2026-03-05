@@ -111,7 +111,7 @@ const stats = [
   { value: "50K+", label: "Evaluations Processed" },
   { value: "200+", label: "Financial Institutions" },
 ];
-const rotatingWords = ["Faster.", "Smarter.", "Sharper.", "Simpler.", "Better."];
+const rotatingWords = ["Faster", "Smarter", "Sharper", "Simpler", "Better"];
 
 function RotatingWord() {
   const [wordIndex, setWordIndex] = useState(0);
@@ -145,9 +145,13 @@ function RotatingWord() {
     return () => clearTimeout(timeout);
   }, [displayText, isDeleting, wordIndex]);
 
+  const currentWord = rotatingWords[wordIndex];
+  const isComplete = !isDeleting && displayText === currentWord;
+
   return (
     <span className="inline-block text-foreground">
       {displayText}
+      {isComplete && <span className="text-muted-foreground">.</span>}
       <span className="inline-block w-[3px] h-[0.85em] bg-foreground ml-1 align-middle animate-[blink_1s_step-end_infinite]" />
     </span>
   );
