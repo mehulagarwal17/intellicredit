@@ -4,10 +4,10 @@ import {
   Search as SearchIcon,
   FileText,
   Shield,
-  CreditCard,
   LogOut,
   UserCog,
 } from "lucide-react";
+import appLogo from "@/assets/logo.png";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -51,8 +51,8 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg gradient-corporate">
-            <CreditCard className="h-4 w-4 text-sidebar-primary-foreground" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg overflow-hidden">
+            <img src={appLogo} alt="IntelliCredit" className="h-full w-full object-contain" />
           </div>
           {!collapsed && (
             <div className="flex flex-col">

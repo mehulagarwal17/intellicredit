@@ -9,11 +9,11 @@ import {
   FileSearch,
   ArrowRight,
   CheckCircle2,
-  TrendingUp,
   Lock,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import appLogo from "@/assets/logo.png";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
@@ -177,9 +177,7 @@ export default function Landing() {
       >
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-foreground flex items-center justify-center">
-              <TrendingUp className="h-4 w-4 text-background" />
-            </div>
+            <img src={appLogo} alt="IntelliCredit" className="h-8 w-8 object-contain" />
             <span className="text-lg font-semibold tracking-tight">IntelliCredit</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
@@ -404,9 +402,7 @@ export default function Landing() {
       <footer className="border-t border-border py-10">
         <div className="mx-auto max-w-7xl px-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded bg-foreground flex items-center justify-center">
-              <TrendingUp className="h-3 w-3 text-background" />
-            </div>
+            <img src={appLogo} alt="IntelliCredit" className="h-6 w-6 object-contain" />
             <span className="text-sm font-medium">IntelliCredit</span>
           </div>
           <div className="flex items-center gap-6 text-xs text-muted-foreground">
