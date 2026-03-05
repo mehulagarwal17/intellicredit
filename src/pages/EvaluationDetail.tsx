@@ -10,6 +10,7 @@ import { FinancialAnalysis } from "@/components/FinancialAnalysis";
 import { RiskScorePanel } from "@/components/RiskScorePanel";
 import { LoanRecommendationPanel } from "@/components/LoanRecommendationPanel";
 import { CAMPreview } from "@/components/CAMPreview";
+import { EvaluationComments } from "@/components/EvaluationComments";
 
 function formatCurrency(amount: number) {
   if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(1)} Cr`;
@@ -236,6 +237,9 @@ export default function EvaluationDetail() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Comments Section */}
+      <EvaluationComments evaluationId={id!} />
     </div>
   );
 }
