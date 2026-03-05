@@ -12,6 +12,7 @@ import { LoanRecommendationPanel } from "@/components/LoanRecommendationPanel";
 import { CAMPreview } from "@/components/CAMPreview";
 import { EvaluationComments } from "@/components/EvaluationComments";
 import { WorkflowPanel } from "@/components/WorkflowPanel";
+import { CibilReportPanel } from "@/components/CibilReportPanel";
 
 function formatCurrency(amount: number) {
   if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(1)} Cr`;
@@ -227,6 +228,7 @@ export default function EvaluationDetail() {
       <Tabs defaultValue="financial" className="space-y-4">
         <TabsList className="bg-muted/50 w-full overflow-x-auto flex justify-start">
           <TabsTrigger value="financial" className="text-xs sm:text-sm">Financial Analysis</TabsTrigger>
+          <TabsTrigger value="cibil" className="text-xs sm:text-sm">CIBIL Report</TabsTrigger>
           <TabsTrigger value="risk" className="text-xs sm:text-sm">Risk Scoring</TabsTrigger>
           <TabsTrigger value="recommendation" className="text-xs sm:text-sm">Recommendation</TabsTrigger>
           <TabsTrigger value="cam" className="text-xs sm:text-sm">CAM Report</TabsTrigger>
@@ -234,6 +236,10 @@ export default function EvaluationDetail() {
 
         <TabsContent value="financial">
           {financials && <FinancialAnalysis data={financials} />}
+        </TabsContent>
+
+        <TabsContent value="cibil">
+          {id && <CibilReportPanel evaluationId={id} />}
         </TabsContent>
 
         <TabsContent value="risk">
