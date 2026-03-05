@@ -1,170 +1,354 @@
+# 🚀 IntelliCredit
+
+### AI-Powered Credit Intelligence Platform for Corporate Lending
+
 <p align="center">
-  <img src="src/assets/logo.png" alt="IntelliCredit" width="80" />
+  <img src="https://skillicons.dev/icons?i=react,typescript,vite,tailwind,supabase,postgres,nodejs,python" />
 </p>
 
-<h1 align="center">IntelliCredit</h1>
-
 <p align="center">
-  <strong>AI-Powered Credit Decision Support System for Indian Corporate Lending</strong>
-</p>
-
-<p align="center">
-  <a href="https://intellicredit.lovable.app">Live Demo</a> ·
-  <a href="#features">Features</a> ·
-  <a href="#tech-stack">Tech Stack</a> ·
-  <a href="#getting-started">Getting Started</a>
+AI-driven platform that automates corporate credit evaluation, financial analysis, and risk scoring to help lenders make faster and smarter decisions.
 </p>
 
 ---
 
-## Overview
+# 🧠 Overview
 
-IntelliCredit is an enterprise-grade platform that transforms credit evaluation workflows for mid-sized corporate loan applications. It leverages AI to analyze financials, score risk, and generate comprehensive credit memos — reducing decision time from **weeks to hours**.
+**IntelliCredit** is a modern fintech platform designed to streamline the **corporate credit evaluation workflow**.
 
-Built for credit officers, analysts, and risk managers in the Indian financial ecosystem.
+Traditional credit assessment requires manual review of financial documents, compliance reports, and risk factors. IntelliCredit automates this entire pipeline using intelligent document processing, financial analytics, and automated credit scoring.
 
-## Features
+The platform helps financial institutions:
 
-### 🧠 AI-Powered Analysis
-- Automated financial ratio analysis (DSCR, D/E, EBITDA margins, current ratio)
-- AI-driven risk scoring with weighted multi-factor components
-- Intelligent loan recommendations with interest rate suggestions
+* Reduce credit evaluation time
+* Improve risk visibility
+* Automate financial analysis
+* Generate structured credit appraisal reports
+* Track the full credit decision workflow
 
-### 📄 Smart Document Processing
-- Upload & parse annual reports, GST filings, bank statements, and legal notices
-- Automated data extraction and structuring via edge functions
-- GST-bank statement mismatch detection
+---
 
-### 📊 Risk Scoring Engine
-- **Financial Strength** — balance sheet & profitability metrics
-- **Compliance Health** — GST consistency, regulatory adherence
-- **Litigation & News** — active legal case tracking, sentiment analysis
-- **Qualitative Assessment** — management quality, industry outlook
+# ✨ Core Features
 
-### 🔄 Workflow Management
-- Full evaluation lifecycle: `Draft → In Progress → Under Review → Approved / Rejected`
-- Role-based access control (Admin, Credit Officer, Analyst)
-- Workflow history tracking with comments
+## 🤖 AI-Driven Financial Analysis
 
-### 🔍 Research Agent
-- AI-powered company research and news aggregation
-- Sentiment-tagged news feed integration
+Automatically analyze company financial health.
 
-### 📈 Dashboard & Reporting
-- Real-time analytics with evaluation metrics
-- CAM (Credit Appraisal Memo) preview & PDF export
-- Comprehensive audit logs for regulatory compliance
+Capabilities include:
 
-### 🔔 Notifications
-- Real-time notification system for evaluation updates
-- Status change alerts across the workflow
+* Financial ratio analysis
+* Debt service coverage evaluation
+* Liquidity analysis
+* Risk-based interest rate suggestions
+* Automated lending recommendations
 
-### 🔐 Authentication & Security
-- Email-based authentication with verification
-- Row-Level Security (RLS) on all database tables
-- Role-based access via `user_roles` table with `has_role()` security definer function
+Key metrics analyzed:
 
-## Tech Stack
+* DSCR
+* Debt-to-Equity
+* Current Ratio
+* EBITDA margins
+* Profitability trends
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | React 18, TypeScript, Vite |
-| **Styling** | Tailwind CSS, shadcn/ui, Framer Motion |
-| **State** | TanStack React Query |
-| **Backend** | Lovable Cloud (Supabase) |
-| **Database** | PostgreSQL with RLS policies |
-| **Edge Functions** | Deno (document analysis, risk scoring, financial processing) |
-| **PDF Generation** | jsPDF + html2canvas |
-| **Charts** | Recharts |
+---
 
-## Database Schema
+## 📄 Intelligent Document Processing
 
-```
-companies ─────────┐
-                    ├── evaluations ──┬── extracted_financials
-profiles            │                 ├── risk_scores
-user_roles          │                 ├── loan_recommendations
-                    │                 ├── uploaded_documents
-                    │                 ├── evaluation_comments
-                    │                 ├── workflow_history
-                    │                 ├── audit_logs
-                    │                 └── notifications
-```
+Upload financial documents and extract structured financial data automatically.
 
-### Key Enums
-- **Evaluation Status:** `draft` · `in_progress` · `under_review` · `completed` · `approved` · `rejected` · `archived`
-- **Document Types:** `annual_report` · `gst_data` · `bank_statement` · `legal_notice` · `rating_report`
-- **Risk Categories:** `low` · `medium` · `high`
-- **User Roles:** `admin` · `credit_officer` · `analyst`
+Supported inputs:
 
-## Edge Functions
+* Annual reports
+* GST filings
+* Bank statements
+* Rating reports
+* Legal documents
 
-| Function | Purpose |
-|----------|---------|
-| `analyze-document` | Parses uploaded documents and extracts structured data |
-| `compute-risk-score` | Calculates weighted risk scores from financial & qualitative data |
-| `process-financials` | Processes raw financial data into standardized metrics |
+Capabilities:
 
-## Getting Started
+* Financial data extraction
+* GST vs bank statement reconciliation
+* Structured data normalization
+* Automated financial summaries
 
-### Prerequisites
-- Node.js 18+ & npm
+---
 
-### Installation
+## ⚠️ Risk Scoring Engine
 
-```bash
-# Clone the repository
-git clone <YOUR_GIT_URL>
-cd intellicredit
+Multi-factor credit risk evaluation.
 
-# Install dependencies
-npm install
+Risk signals considered:
 
-# Start development server
-npm run dev
-```
+* Financial strength
+* Compliance signals
+* Litigation risks
+* Market sentiment
+* Management quality indicators
 
-The app will be available at `http://localhost:5173`.
+Output includes:
 
-### Scripts
+* Risk category (Low / Medium / High)
+* Weighted risk score
+* Lending decision recommendations
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start dev server |
-| `npm run build` | Production build |
-| `npm run test` | Run tests |
-| `npm run lint` | Lint codebase |
-| `npm run preview` | Preview production build |
+---
 
-## Project Structure
+## 🔁 Credit Workflow Management
 
-```
+Track every stage of the credit lifecycle.
+
+Workflow stages:
+
+Draft → In Progress → Under Review → Approved / Rejected
+
+Features include:
+
+* Role-based access control
+* Workflow history tracking
+* Evaluation comments
+* Approval pipeline
+* Activity timeline
+
+---
+
+## 🧠 Research Intelligence Agent
+
+Collects external intelligence about evaluated companies.
+
+Includes:
+
+* News aggregation
+* Sentiment analysis
+* Market perception tracking
+* Risk signal detection
+
+---
+
+## 📊 Credit Intelligence Dashboard
+
+Interactive dashboards provide real-time insights.
+
+Capabilities:
+
+* Evaluation summaries
+* Financial metrics visualization
+* Risk dashboards
+* CAM (Credit Appraisal Memo) generation
+* Exportable reports
+
+---
+
+## 🔔 Notification System
+
+Stay updated on evaluation progress.
+
+Notifications include:
+
+* Workflow updates
+* Evaluation status changes
+* Team collaboration alerts
+* System events
+
+---
+
+# 🛠 Tech Stack
+
+| Layer              | Technologies            |
+| ------------------ | ----------------------- |
+| Frontend           | React, TypeScript, Vite |
+| Styling            | Tailwind CSS, shadcn/ui |
+| Backend            | Supabase                |
+| Database           | PostgreSQL              |
+| Edge Functions     | Deno                    |
+| Data Visualization | Recharts                |
+| Animation          | Framer Motion           |
+| Reporting          | jsPDF, html2canvas      |
+
+---
+
+# 🏗 System Architecture
+
+Frontend
+React + TypeScript + Vite
+
+↓
+
+Backend Services
+Supabase + Edge Functions
+
+↓
+
+Database
+PostgreSQL (with Row Level Security)
+
+↓
+
+AI Processing Layer
+Financial Analysis
+Risk Scoring Engine
+Document Extraction
+
+---
+
+# 🗄 Database Design
+
+Core entities:
+
+companies
+evaluations
+uploaded_documents
+extracted_financials
+risk_scores
+loan_recommendations
+workflow_history
+evaluation_comments
+audit_logs
+notifications
+
+User management:
+
+profiles
+user_roles
+
+---
+
+# ⚙️ Edge Functions
+
+Serverless functions power the intelligence layer.
+
+Functions include:
+
+**analyze-document**
+
+Extract structured financial data from uploaded documents.
+
+**compute-risk-score**
+
+Generate weighted credit risk scores based on financial metrics.
+
+**process-financials**
+
+Normalize extracted financial metrics and prepare them for analysis.
+
+---
+
+# 📂 Project Structure
+
 src/
-├── assets/            # Static assets (logo, images)
-├── components/        # Reusable UI components
-│   ├── ui/            # shadcn/ui primitives
-│   ├── AppLayout.tsx  # Authenticated app shell
-│   ├── AppSidebar.tsx # Navigation sidebar
-│   └── ...            # Feature components
-├── data/              # Mock data for development
-├── hooks/             # Custom React hooks (auth, toast, mobile)
-├── integrations/      # Supabase client & types (auto-generated)
-├── pages/             # Route-level page components
-│   ├── Landing.tsx    # Marketing landing page
-│   ├── Auth.tsx       # Login / signup
-│   ├── Dashboard.tsx  # Main dashboard
-│   ├── NewEvaluation.tsx
-│   ├── EvaluationDetail.tsx
-│   ├── ResearchAgent.tsx
-│   ├── Reports.tsx
-│   ├── AuditLogs.tsx
-│   └── Profile.tsx
-├── types/             # TypeScript type definitions
-└── lib/               # Utility functions
+
+assets/ – static assets
+
+components/ – reusable UI components
+
+components/ui/ – shadcn UI primitives
+
+hooks/ – custom React hooks
+
+integrations/ – Supabase client setup
+
+pages/ – application pages
+
+types/ – TypeScript definitions
+
+lib/ – utility functions
+
 supabase/
-└── functions/         # Edge functions (Deno)
-```
 
-## License
+functions/ – edge functions
 
-Private — All rights reserved © 2026 IntelliCredit.
+---
+
+# 🚀 Getting Started
+
+## Prerequisites
+
+You will need:
+
+* Node.js 18+
+* npm or yarn
+
+---
+
+## Installation
+
+Clone the repository.
+'''
+git clone https://github.com/mehulagarwal17/intellicredit.git
+
+cd intellicredit
+'''
+Install dependencies.
+
+'''
+npm install
+'''
+Start the development server.
+
+'''
+npm run dev
+'''
+The application will run at:
+
+http://localhost:5173
+
+---
+
+# 🧪 Available Scripts
+
+npm run dev – start development server
+
+npm run build – create production build
+
+npm run preview – preview production build
+
+npm run lint – lint project code
+
+npm run test – run tests
+
+---
+
+# 🎯 Use Cases
+
+IntelliCredit can be used for:
+
+* Corporate lending evaluation
+* Financial risk assessment
+* Automated credit appraisal workflows
+* Financial intelligence dashboards
+* Regulatory reporting preparation
+
+---
+
+# 📌 Future Roadmap
+
+Planned enhancements include:
+
+* AI-based financial forecasting
+* Fraud detection signals
+* Portfolio risk analytics
+* Multi-bank data integrations
+* Advanced underwriting models
+
+---
+
+# 👨‍💻 Author
+
+**Mehul Agarwal**
+
+Focused on building systems at the intersection of:
+
+AI
+Finance
+Data Intelligence
+
+---
+
+# 📜 License
+
+This project is licensed under the MIT License.
+
+---
+
+# ⭐ Support
+
+If you find this project useful, consider giving it a star on GitHub.
