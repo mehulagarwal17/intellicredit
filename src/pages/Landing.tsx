@@ -114,29 +114,41 @@ const stats = [
 const rotatingWords = ["Faster.", "Smarter.", "Sharper.", "Simpler.", "Better."];
 
 function RotatingWord() {
-  const [index, setIndex] = useState(0);
+  const [wordIndex, setWordIndex] = useState(0);
+  const [displayText, setDisplayText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setIndex((prev) => (prev + 1) % rotatingWords.length);
-    }, 2200);
-    return () => clearInterval(interval);
-  }, []);
+    const currentWord = rotatingWords[wordIndex];
+
+    if (!isDeleting && displayText === currentWord) {
+      // Pause before deleting
+      const timeout = setTimeout(() => setIsDeleting(true), 1600);
+      return () => clearTimeout(timeout);
+    }
+
+    if (isDeleting && displayText === "") {
+      setIsDeleting(false);
+      setWordIndex((prev) => (prev + 1) % rotatingWords.length);
+      return;
+    }
+
+    const speed = isDeleting ? 60 : 100;
+    const timeout = setTimeout(() => {
+      setDisplayText(
+        isDeleting
+          ? currentWord.substring(0, displayText.length - 1)
+          : currentWord.substring(0, displayText.length + 1)
+      );
+    }, speed);
+
+    return () => clearTimeout(timeout);
+  }, [displayText, isDeleting, wordIndex]);
 
   return (
-    <span className="inline-block h-[1.1em] overflow-hidden align-bottom">
-      <AnimatePresence mode="wait">
-        <motion.span
-          key={rotatingWords[index]}
-          initial={{ y: "100%", opacity: 0 }}
-          animate={{ y: "0%", opacity: 1 }}
-          exit={{ y: "-100%", opacity: 0 }}
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-          className="inline-block text-foreground"
-        >
-          {rotatingWords[index]}
-        </motion.span>
-      </AnimatePresence>
+    <span className="inline-block text-foreground">
+      {displayText}
+      <span className="inline-block w-[3px] h-[0.85em] bg-foreground ml-1 align-middle animate-[blink_1s_step-end_infinite]" />
     </span>
   );
 }
