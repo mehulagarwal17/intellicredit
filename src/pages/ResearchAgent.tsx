@@ -6,9 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, TrendingDown, TrendingUp, Minus, Search, Globe, Loader2, ExternalLink, Shield, Scale, Newspaper, Building2, Users, Link2, RefreshCw, CheckCircle } from "lucide-react";
+import { AlertTriangle, TrendingDown, TrendingUp, Minus, Search, Globe, Loader2, ExternalLink, Shield, Scale, Newspaper, Building2, Users, Link2, RefreshCw, CheckCircle, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { SentimentAnalyticsPanel } from "@/components/SentimentAnalyticsPanel";
 import { useAuth } from "@/hooks/useAuth";
 
 type ResearchResult = {
@@ -315,6 +316,11 @@ export default function ResearchAgent() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Sentiment Analytics */}
+      {hasSearched && results.length > 0 && (
+        <SentimentAnalyticsPanel results={results} companyName={companyName} />
       )}
 
       {/* Push to Evaluation Button */}
