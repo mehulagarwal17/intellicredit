@@ -55,6 +55,86 @@ export type Database = {
           },
         ]
       }
+      cibil_reports: {
+        Row: {
+          active_accounts: number | null
+          borrower_category: string | null
+          closed_accounts: number | null
+          created_at: string
+          credit_facilities_count: number | null
+          credit_history_length_months: number | null
+          credit_rank: number | null
+          credit_score: number | null
+          dpd_30_count: number | null
+          dpd_60_count: number | null
+          dpd_90_count: number | null
+          evaluation_id: string
+          id: string
+          raw_extraction: Json | null
+          source: string
+          suit_filed_count: number | null
+          total_outstanding: number | null
+          total_overdue: number | null
+          updated_at: string
+          wilful_defaulter: boolean | null
+          worst_status: string | null
+        }
+        Insert: {
+          active_accounts?: number | null
+          borrower_category?: string | null
+          closed_accounts?: number | null
+          created_at?: string
+          credit_facilities_count?: number | null
+          credit_history_length_months?: number | null
+          credit_rank?: number | null
+          credit_score?: number | null
+          dpd_30_count?: number | null
+          dpd_60_count?: number | null
+          dpd_90_count?: number | null
+          evaluation_id: string
+          id?: string
+          raw_extraction?: Json | null
+          source?: string
+          suit_filed_count?: number | null
+          total_outstanding?: number | null
+          total_overdue?: number | null
+          updated_at?: string
+          wilful_defaulter?: boolean | null
+          worst_status?: string | null
+        }
+        Update: {
+          active_accounts?: number | null
+          borrower_category?: string | null
+          closed_accounts?: number | null
+          created_at?: string
+          credit_facilities_count?: number | null
+          credit_history_length_months?: number | null
+          credit_rank?: number | null
+          credit_score?: number | null
+          dpd_30_count?: number | null
+          dpd_60_count?: number | null
+          dpd_90_count?: number | null
+          evaluation_id?: string
+          id?: string
+          raw_extraction?: Json | null
+          source?: string
+          suit_filed_count?: number | null
+          total_outstanding?: number | null
+          total_overdue?: number | null
+          updated_at?: string
+          wilful_defaulter?: boolean | null
+          worst_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cibil_reports_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "evaluations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           cin: string | null

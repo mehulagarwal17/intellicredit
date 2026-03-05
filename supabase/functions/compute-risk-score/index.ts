@@ -46,6 +46,13 @@ serve(async (req) => {
       .eq("evaluation_id", evaluation_id)
       .single();
 
+    // Fetch CIBIL data if available
+    const { data: cibilData } = await supabase
+      .from("cibil_reports")
+      .select("*")
+      .eq("evaluation_id", evaluation_id)
+      .single();
+
     // === Financial Strength Score (0-100, lower is better) ===
     let financialScore = 30; // default moderate
     const topDrivers: string[] = [];
@@ -81,12 +88,63 @@ serve(async (req) => {
     }
     financialScore = Math.max(0, Math.min(100, financialScore));
 
-    // === Compliance Score ===
+    // === Compliance Score (enhanced with CIBIL) ===
     let complianceScore = 40;
     if (financials?.active_legal_cases && financials.active_legal_cases > 0) {
       complianceScore += financials.active_legal_cases * 10;
       topDrivers.push(`${financials.active_legal_cases} pending litigation cases`);
     }
+
+    // CIBIL integration into compliance + financial scores
+    if (cibilData) {
+      // CMR rank impact (1=best, 10=worst)
+      const cmr = cibilData.credit_rank || 5;
+      if (cmr >= 8) {
+        complianceScore += 20;
+        financialScore += 10;
+        topDrivers.push(`CIBIL CMR Rank ${cmr}/10 — High credit risk`);
+      } else if (cmr >= 5) {
+        complianceScore += 10;
+        topDrivers.push(`CIBIL CMR Rank ${cmr}/10 — Moderate credit risk`);
+      } else if (cmr <= 2) {
+        complianceScore -= 10;
+        financialScore -= 5;
+      }
+
+      // DPD impact
+      if (cibilData.dpd_90_count > 0) {
+        complianceScore += cibilData.dpd_90_count * 8;
+        topDrivers.push(`${cibilData.dpd_90_count} accounts with 90+ DPD in CIBIL report`);
+      }
+      if (cibilData.dpd_60_count > 0) {
+        complianceScore += cibilData.dpd_60_count * 4;
+      }
+
+      // Wilful defaulter
+      if (cibilData.wilful_defaulter) {
+        complianceScore += 30;
+        topDrivers.push("CIBIL: Marked as Wilful Defaulter — critical risk");
+      }
+
+      // Suit filed
+      if (cibilData.suit_filed_count > 0) {
+        complianceScore += cibilData.suit_filed_count * 6;
+        topDrivers.push(`${cibilData.suit_filed_count} suits filed per CIBIL report`);
+      }
+
+      // Overdue ratio
+      if (cibilData.total_outstanding > 0) {
+        const overdueRatio = (cibilData.total_overdue || 0) / cibilData.total_outstanding;
+        if (overdueRatio > 0.2) {
+          financialScore += 10;
+          topDrivers.push(`High overdue ratio: ${(overdueRatio * 100).toFixed(1)}% of outstanding per CIBIL`);
+        }
+      }
+
+      // Recalculate financial score bounds
+      financialScore = Math.max(0, Math.min(100, financialScore));
+    }
+
     complianceScore = Math.max(0, Math.min(100, complianceScore));
 
     // === Litigation/News Score — dynamic from web research ===
