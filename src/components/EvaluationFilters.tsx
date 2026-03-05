@@ -27,6 +27,9 @@ export function EvaluationFilters({ filters, onFiltersChange, industries }: Prop
           <SelectItem value="all">All Status</SelectItem>
           <SelectItem value="draft">Draft</SelectItem>
           <SelectItem value="in_progress">In Progress</SelectItem>
+          <SelectItem value="under_review">Under Review</SelectItem>
+          <SelectItem value="approved">Approved</SelectItem>
+          <SelectItem value="rejected">Rejected</SelectItem>
           <SelectItem value="completed">Completed</SelectItem>
           <SelectItem value="archived">Archived</SelectItem>
         </SelectContent>

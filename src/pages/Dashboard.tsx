@@ -278,10 +278,21 @@ export default function Dashboard() {
                       </td>
                       <td className="py-3 px-4">
                         <Badge
-                          variant={evaluation.status === "completed" ? "default" : "secondary"}
+                          variant={
+                            evaluation.status === "approved" || evaluation.status === "completed" ? "default"
+                            : evaluation.status === "rejected" ? "destructive"
+                            : "secondary"
+                          }
                           className="text-[10px] uppercase tracking-wider"
                         >
-                          {evaluation.status === "completed" ? "Completed" : evaluation.status === "draft" ? "Draft" : "In Progress"}
+                          {evaluation.status === "completed" ? "Completed"
+                            : evaluation.status === "draft" ? "Draft"
+                            : evaluation.status === "in_progress" ? "In Progress"
+                            : evaluation.status === "under_review" ? "Under Review"
+                            : evaluation.status === "approved" ? "Approved"
+                            : evaluation.status === "rejected" ? "Rejected"
+                            : evaluation.status === "archived" ? "Archived"
+                            : evaluation.status}
                         </Badge>
                       </td>
                       <td className="py-3 px-4 text-muted-foreground text-xs">
